@@ -11,6 +11,9 @@ type Filter func(key, value string) bool
 // A Splitter splits environment variable keys into a slice.
 type Splitter func(key string) []string
 
+// A Stripper removes characters from an an environment variable key.
+type Stripper func(key string) string
+
 // An Option configures the Parser.
 type Option interface {
 	apply(*Parser)
@@ -23,17 +26,35 @@ func (fn OptionFunc) apply(p *Parser) {
 	fn(p)
 }
 
-// WithFilter sets the Filter function to use.
-func WithFilter(f Filter) Option {
+// SetFilter sets the Filter function to use.
+func SetFilter(f Filter) Option {
 	return OptionFunc(func(p *Parser) {
 		p.filter = f
 	})
 }
 
-// WithSplitter sets the Splitter function to use.
-func WithSplitter(s Splitter) Option {
+// SetSplitter sets the Splitter function to use.
+func SetSplitter(s Splitter) Option {
 	return OptionFunc(func(p *Parser) {
 		p.splitter = s
+	})
+}
+
+// WithKeyPrefix filters out environment variables that do not start with he given prefix.
+func WithKeyPrefix(prefix string) Option {
+	return OptionFunc(func(p *Parser) {
+		p.filter = Filter(func(key, value string) bool {
+			return !strings.HasPrefix(key, strings.ToUpper(prefix))
+		})
+	})
+}
+
+// WithStrip filters out environment variables that do not start with he given prefix.
+func WithStrip(v string) Option {
+	return OptionFunc(func(p *Parser) {
+		p.stripper = Stripper(func(key string) string {
+			return strings.Replace(key, v, "", -1)
+		})
 	})
 }
 
@@ -56,6 +77,7 @@ func DefaultSplitter(key string) []string {
 type Parser struct {
 	filter   Filter
 	splitter Splitter
+	stripper Stripper
 }
 
 // New constructs a new OS environment variables parser.
@@ -84,6 +106,10 @@ func (p *Parser) Values() (<-chan func() (string, interface{}), error) {
 
 			if p.filter(key, val) {
 				continue
+			}
+
+			if p.stripper != nil {
+				key = p.stripper(key)
 			}
 
 			key = strings.Join(p.splitter(key), ".")
