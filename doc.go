@@ -17,18 +17,22 @@
 //       "go.krak3n.codes/gofig/parsers/toml" // because why aren't you using TOML?
 //   )
 //
-//   type MyConfig struct {
+//   type Config struct {
 //       Foo string `gofig:"foo"`
 //       Bar string `gofig:"bar"`
 //   }
 //
 //   func main() {
-//       var cfg MyConfig
+//	     var cfg Config
 //
-//       // gofig.Must will panic on error
-//       fig := gofig.Must(gofig.New(&cfg))
-//       gofig.Must(fig.Parse(toml.File("/path/to/my/config.toml")))
+//	     // Initialise gofig with the struct config values will be placed into
+//	     gfg, err := gofig.New(&cfg)
+//	     gofig.Must(err)
 //
-//       // Use your config
+//	     // Parse so environment variables
+//       gofig.Must(gfg.Parse(gfg.FromFile(toml.New(), "/pah/to/cfg.toml")))
+//
+//	     // Use the config
+//	     fmt.Println("Foo:", cfg.Foo, "Bar:", cfg.Bar)
 //   }
 package gofig
