@@ -108,7 +108,7 @@ func split(env string) (string, string) {
 
 	for i := 0; i < len(env); i++ {
 		if env[i] == '=' {
-			key = env[:i-1]
+			key = env[:i]
 			val = env[i+1:]
 		}
 	}
