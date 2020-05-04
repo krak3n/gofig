@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -126,25 +127,136 @@ func (c *Config) parse(p Parser) error {
 
 		c.log.Printf("key: %s values :%s", key, val)
 
-		if field.CanSet() {
-			// TODO: more types
-			// TODO: nested structured
-			// TODO: Unmarshal interface for custom types
-			switch field.Kind() {
-			case reflect.String:
-				if v, ok := val.(string); ok {
-					field.SetString(v)
-				}
+		return setValue(field, val)
+	}
+}
 
-			default:
-				// TODO: return error
-			}
+func setValue(field reflect.Value, value interface{}) error {
+	// TODO: more types
+	// TODO: nested structured
+	// TODO: Unmarshal interface for custom types
+	switch k := field.Kind(); k {
+	case reflect.String:
+		return setString(field, value)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return setInt64(field, value)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return setUint64(field, value)
+	case reflect.Float32, reflect.Float64:
+		return setFloat64(field, value)
+	default:
+		return ErrInvalidConversion{
+			To:   k,
+			From: reflect.ValueOf(value).Kind(),
+		}
+	}
+}
 
-			continue
+func setString(field reflect.Value, value interface{}) error {
+	v, ok := value.(string)
+	if !ok {
+		return nil // TODO: error
+	}
+
+	field.SetString(v)
+
+	return nil
+}
+
+func setInt64(field reflect.Value, value interface{}) error {
+	var i int64
+
+	switch t := value.(type) {
+	case string:
+		v, err := strconv.ParseInt(t, 10, 64)
+		if err != nil {
+			return err
 		}
 
-		// TODO: return error
+		i = v
+	case int:
+		i = int64(t)
+	case int8:
+		i = int64(t)
+	case int16:
+		i = int64(t)
+	case int32:
+		i = int64(t)
+	case int64:
+		i = int64(t)
+	default:
+		return nil // TODO: error type
 	}
+
+	if field.OverflowInt(i) {
+		return nil // TODO: error type
+	}
+
+	field.SetInt(i)
+
+	return nil
+}
+
+func setUint64(field reflect.Value, value interface{}) error {
+	var i uint64
+
+	switch t := value.(type) {
+	case string:
+		v, err := strconv.ParseUint(t, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		i = v
+	case int:
+		i = uint64(t)
+	case int8:
+		i = uint64(t)
+	case int16:
+		i = uint64(t)
+	case int32:
+		i = uint64(t)
+	case int64:
+		i = uint64(t)
+	default:
+		return nil // TODO: error type
+	}
+
+	if field.OverflowUint(i) {
+		return nil // TODO: error type
+	}
+
+	field.SetUint(i)
+
+	return nil
+}
+
+func setFloat64(field reflect.Value, value interface{}) error {
+	var i float64
+
+	switch t := value.(type) {
+	case string:
+		v, err := strconv.ParseFloat(t, 64)
+		if err != nil {
+			return err
+		}
+
+		i = v
+	case float32:
+		i = float64(t)
+	case float64:
+		i = float64(t)
+	default:
+		return nil // TODO: error type
+	}
+
+	if field.OverflowFloat(i) {
+		return nil // TODO: error type
+	}
+
+	field.SetFloat(i)
+
+	return nil
 }
 
 func parse(v interface{}) (map[string]reflect.Value, error) {
@@ -174,7 +286,7 @@ func flatten(rv reflect.Value, rt reflect.Type, key string, fields map[string]re
 		fv := rv.Field(i)
 		ft := rt.Field(i)
 
-		if fv.CanInterface() {
+		if fv.CanSet() {
 			var t tag
 
 			if v, ok := ft.Tag.Lookup(DefaultStructTag); ok {
