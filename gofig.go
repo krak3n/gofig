@@ -1,6 +1,7 @@
 package gofig
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -13,7 +14,8 @@ const (
 
 // A Logger can print log items
 type Logger interface {
-	Print(v ...interface{})
+	Print(values ...interface{})
+	Printf(format string, values ...interface{})
 }
 
 // A LoggerFunc is an adapter function allowing regular methods to act as Loggers.
@@ -22,6 +24,11 @@ type LoggerFunc func(v ...interface{})
 // Print calls the wrapped fn.
 func (fn LoggerFunc) Print(v ...interface{}) {
 	fn(v...)
+}
+
+// Printf calls the wrapped fn.
+func (fn LoggerFunc) Printf(format string, v ...interface{}) {
+	fn(fmt.Sprintf(format, v...))
 }
 
 // DefaultLogger returns a standard lib logger.
@@ -117,7 +124,7 @@ func (c *Config) parse(p Parser) error {
 			continue
 		}
 
-		c.log.Print("key:", key, "value:", val)
+		c.log.Printf("key: %s values :%s", key, val)
 
 		if field.CanSet() {
 			// TODO: more types
