@@ -13,6 +13,11 @@ const (
 	DefaultStructTag = "gofig"
 )
 
+// Unmarshaler is the interface implemented by types that can unmarshal a values themselves.
+type Unmarshaler interface {
+	UnmarshalGoFig(value interface{}) error
+}
+
 // A Logger can print log items
 type Logger interface {
 	Print(values ...interface{})
@@ -125,17 +130,23 @@ func (c *Config) parse(p Parser) error {
 			continue
 		}
 
-		c.log.Printf("key: %s values :%s", key, val)
+		c.log.Printf("key: %s values: %s", key, val)
 
-		return setValue(field, val)
+		if err := setValue(field, val); err != nil {
+			return err
+		}
 	}
 }
 
 func setValue(field reflect.Value, value interface{}) error {
-	// TODO: more types
-	// TODO: nested structured
-	// TODO: Unmarshal interface for custom types
-	switch k := field.Kind(); k {
+	fk := field.Kind()
+	vk := reflect.ValueOf(value).Kind()
+
+	if u := unmarshaler(field); u != nil {
+		return u.UnmarshalGoFig(value)
+	}
+
+	switch field.Kind() {
 	case reflect.String:
 		return setString(field, value)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -144,12 +155,63 @@ func setValue(field reflect.Value, value interface{}) error {
 		return setUint64(field, value)
 	case reflect.Float32, reflect.Float64:
 		return setFloat64(field, value)
-	default:
-		return ErrInvalidConversion{
-			To:   k,
-			From: reflect.ValueOf(value).Kind(),
-		}
+	case reflect.Slice, reflect.Array:
+		// TODO: slice / array
+	case reflect.Map:
+		// TODO: map
+	case reflect.Struct:
+		// TODO: struct
 	}
+
+	return ErrInvalidConversion{
+		To:   fk,
+		From: vk,
+	}
+}
+
+func unmarshaler(field reflect.Value) Unmarshaler {
+	if field.Kind() != reflect.Ptr && field.Type().Name() != "" && field.CanAddr() {
+		field = field.Addr()
+	}
+
+	for {
+		if field.Kind() == reflect.Interface && !field.IsNil() {
+			e := field.Elem()
+			if e.Kind() == reflect.Ptr && !e.IsNil() && e.Elem().Kind() == reflect.Ptr {
+				field = e
+				continue
+			}
+		}
+
+		if field.Kind() != reflect.Ptr {
+			break
+		}
+
+		if field.CanSet() {
+			break
+		}
+
+		if field.Elem().Kind() == reflect.Interface && field.Elem().Elem() == field {
+			field = field.Elem()
+			break
+		}
+
+		if field.IsNil() {
+			field.Set(reflect.New(field.Type().Elem()))
+		}
+
+		if field.Type().NumMethod() > 0 && field.CanInterface() {
+			if u, ok := field.Interface().(Unmarshaler); ok {
+				return u
+			}
+
+			break
+		}
+
+		field = field.Elem()
+	}
+
+	return nil
 }
 
 func setString(field reflect.Value, value interface{}) error {
