@@ -124,16 +124,24 @@ func (c *Config) parse(p Parser) error {
 		}
 
 		key, val := fn()
+
 		field, ok := c.fields[strings.ToLower(key)]
-		if !ok {
-			c.log.Print("key:", key, "value:", val)
-			continue
+		if ok {
+			c.log.Printf("set key %s to %v", key, val)
+			if err := setValue(field, val); err != nil {
+				return err
+			}
 		}
 
-		c.log.Printf("key: %s values: %s", key, val)
+		// Is the key above a map, if so the fields can be decoded
+		parents := strings.Split(key, ".")
+		parent := strings.Join(parents[:len(parents)-1], ".")
 
-		if err := setValue(field, val); err != nil {
-			return err
+		if field, ok := c.fields[parent]; ok && field.Kind() == reflect.Map {
+			c.log.Printf("set key %s to %v", key, val)
+			if err := setMap(field, parents[len(parents)-1], val); err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -156,11 +164,7 @@ func setValue(field reflect.Value, value interface{}) error {
 	case reflect.Float32, reflect.Float64:
 		return setFloat64(field, value)
 	case reflect.Slice, reflect.Array:
-		// TODO: slice / array
-	case reflect.Map:
-		// TODO: map
-	case reflect.Struct:
-		// TODO: struct
+		return setSlice(field, value)
 	}
 
 	return ErrInvalidConversion{
@@ -321,6 +325,51 @@ func setFloat64(field reflect.Value, value interface{}) error {
 	return nil
 }
 
+func setSlice(field reflect.Value, value interface{}) error {
+	vv := reflect.ValueOf(value)
+	if vv.Kind() != reflect.Array && vv.Kind() != reflect.Slice {
+		return nil // TODO: error
+	}
+
+	s := reflect.MakeSlice(reflect.SliceOf(field.Type().Elem()), vv.Len(), vv.Cap())
+
+	for i := 0; i < vv.Len(); i++ {
+		e := reflect.New(field.Type().Elem())
+		if err := setValue(e.Elem(), vv.Index(i).Interface()); err != nil {
+			return err
+		}
+
+		s.Index(i).Set(e.Elem())
+	}
+
+	field.Set(s)
+
+	return nil
+}
+
+func setMap(field reflect.Value, key string, value interface{}) error {
+	// TODO: lock
+	if field.IsNil() {
+		field.Set(reflect.MakeMap(reflect.MapOf(
+			field.Type().Key(),
+			field.Type().Elem())))
+	}
+	// TODO: unlock
+
+	if reflect.ValueOf(value).Kind() != field.Type().Elem().Kind() {
+		return nil // TODO: error
+	}
+
+	v := reflect.New(field.Type().Elem())
+	if err := setValue(v.Elem(), value); err != nil {
+		return err
+	}
+
+	field.SetMapIndex(reflect.ValueOf(key), v.Elem())
+
+	return nil
+}
+
 func parse(v interface{}) (map[string]reflect.Value, error) {
 	rt := reflect.TypeOf(v)
 	rv := reflect.ValueOf(v)
@@ -361,9 +410,10 @@ func flatten(rv reflect.Value, rt reflect.Type, key string, fields map[string]re
 
 			name := strings.Trim(strings.Join(append(strings.Split(key, "."), t.name), "."), ".")
 
-			if fv.Kind() == reflect.Struct {
+			switch fv.Kind() {
+			case reflect.Struct:
 				flatten(fv, ft.Type, name, fields)
-			} else {
+			default:
 				fields[name] = fv
 			}
 		}
