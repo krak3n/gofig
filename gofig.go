@@ -125,24 +125,31 @@ func (c *Config) parse(p Parser) error {
 
 		key, val := fn()
 
-		field, ok := c.fields[strings.ToLower(key)]
-		if ok {
+		if field, ok := c.fields[strings.ToLower(key)]; ok {
 			c.log.Printf("set key %s to %v", key, val)
+
 			if err := setValue(field, val); err != nil {
 				return err
 			}
+
+			continue
 		}
 
-		// Is the key above a map, if so the fields can be decoded
-		parents := strings.Split(key, ".")
-		parent := strings.Join(parents[:len(parents)-1], ".")
-
-		if field, ok := c.fields[parent]; ok && field.Kind() == reflect.Map {
+		// If the field was not found this could be a map element value.
+		// This will always be the leaf node.
+		// First we find the root map at the top of the stack.
+		if path, m, ok := c.rootMap(key); ok {
 			c.log.Printf("set key %s to %v", key, val)
-			if err := setMap(field, parents[len(parents)-1], val); err != nil {
+
+			key = strings.Trim(strings.Replace(key, path, "", -1), ".")
+			if err := setMap(m, key, val); err != nil {
 				return err
 			}
+
+			continue
 		}
+
+		c.log.Printf("ignoring %s of value %v", key, val)
 	}
 }
 
@@ -347,14 +354,59 @@ func setSlice(field reflect.Value, value interface{}) error {
 	return nil
 }
 
+func (c *Config) rootMap(key string) (string, reflect.Value, bool) {
+	var v reflect.Value
+
+	elms := strings.Split(key, ".")
+
+	key = strings.Join(elms[:len(elms)-1], ".")
+	if key == "" {
+		return key, v, false
+	}
+
+	field, ok := c.fields[key]
+	if !ok {
+		return c.rootMap(key)
+	}
+
+	if field.Kind() != reflect.Map {
+		return key, v, false
+	}
+
+	return key, field, true
+}
+
 func setMap(field reflect.Value, key string, value interface{}) error {
 	// TODO: lock
 	if field.IsNil() {
+		if field.Type().Key().Kind() != reflect.String {
+			return nil // TODO: error
+		}
+
 		field.Set(reflect.MakeMap(reflect.MapOf(
 			field.Type().Key(),
 			field.Type().Elem())))
 	}
 	// TODO: unlock
+
+	// Nested map
+	if field.Type().Elem().Kind() == reflect.Map {
+		elms := strings.Split(key, ".")
+		key = strings.Join(elms[:len(elms)-1], ".")
+
+		if key == "" {
+			return nil
+		}
+
+		v := reflect.New(field.Type().Elem())
+		if err := setMap(v.Elem(), key, value); err != nil {
+			return err
+		}
+
+		field.SetMapIndex(reflect.ValueOf(elms[0]), v.Elem())
+
+		return nil
+	}
 
 	if reflect.ValueOf(value).Kind() != field.Type().Elem().Kind() {
 		return nil // TODO: error
