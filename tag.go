@@ -1,11 +1,30 @@
 package gofig
 
+import (
+	"strings"
+)
+
+const omitempty = "omitempty"
+
 type tag struct {
-	name string
+	name      string
+	omitempty bool
 }
 
-func parseTag(t string) tag {
-	return tag{
-		name: t,
+func parseTag(v string) tag {
+	var t tag
+
+	for i, v := range strings.Split(v, ",") {
+		if i == 0 {
+			t.name = v
+			continue
+		}
+
+		if v == omitempty {
+			t.omitempty = true
+			continue
+		}
 	}
+
+	return t
 }
