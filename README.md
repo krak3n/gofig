@@ -12,8 +12,8 @@ unopinionated for your configuration loading needs.
 
 GoFig implements it's parsers as sub modules. Currently it supports:
 
-* [Environment Variables](env-godoc-url)
-* [YAML](yaml-godoc-url)
+* [Environment Variables][env-godoc-url]
+* [YAML][yaml-godoc-url]
 
 ### Planned
 
