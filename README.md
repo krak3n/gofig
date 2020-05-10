@@ -1,8 +1,8 @@
 # 💡GoFig
 
-[![Workflow Status][workflow-image]][workflow-url]
 [![Go Version][goversion-image]][goversion-url]
 [![Documentation][doc-image]][doc-url]
+[![Workflow Status][workflow-image]][workflow-url]
 [![Go Report Card][report-image]][report-url]
 
 GoFig is a configuration loading library for Go. It aims to provide a simple, flexible and

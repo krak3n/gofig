@@ -1,9 +1,9 @@
 # Environment Variable Parser
 
-[![Workflow Status][workflow-image]][workflow-url]
 [![Go Version][goversion-image]][goversion-url]
 [![Example][playground-image]][playground-url]
 [![Documentation][doc-image]][doc-url]
+[![Workflow Status][workflow-image]][workflow-url]
 
 This parser loads configuration from OS Environment Variables.
 

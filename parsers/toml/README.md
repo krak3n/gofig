@@ -1,9 +1,9 @@
 # TOML Parser
 
-[![Workflow Status][workflow-image]][workflow-url]
 [![Go Version][goversion-image]][goversion-url]
 [![Example][playground-image]][playground-url]
 [![Documentation][doc-image]][doc-url]
+[![Workflow Status][workflow-image]][workflow-url]
 
 This parser loads `toml` formatted configuration from an `io.ReadCloser`.
 
