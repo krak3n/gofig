@@ -4,8 +4,8 @@
 [![Go Version][goversion-image]][goversion-url]
 [![Documentation][doc-image]][doc-url]
 
-GoFig is a configuration loading library for Go. It aims to provide a simple and intuitive API that is
-unopinionated for all your configuration loading needs.
+GoFig is a configuration loading library for Go. It aims to provide a simple, flexible and
+decoupled API for all your configuration loading needs.
 
 * **Status**: PoC (Proof of Concept)
 
