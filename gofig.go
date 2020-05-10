@@ -257,6 +257,10 @@ func setInt64(field reflect.Value, value interface{}) error {
 		i = int64(t)
 	case int64:
 		i = int64(t)
+	case float32:
+		i = int64(t)
+	case float64:
+		i = int64(t)
 	default:
 		return nil // TODO: error type
 	}
@@ -290,6 +294,10 @@ func setUint64(field reflect.Value, value interface{}) error {
 	case int32:
 		i = uint64(t)
 	case int64:
+		i = uint64(t)
+	case float32:
+		i = uint64(t)
+	case float64:
 		i = uint64(t)
 	default:
 		return nil // TODO: error type
