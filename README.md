@@ -14,6 +14,8 @@ unopinionated for your configuration loading needs.
 package main
 
 import (
+	"fmt"
+
 	"go.krak3n.codes/gofig"
 	"go.krak3n.codes/gofig/parsers/env"
 )
@@ -30,15 +32,15 @@ type Config  struct {
 func main() {
 	var cfg Config
 
-	fig, err := gofig.New(&cfg)
+	// Initialise gofig with the destination struct
+	gfg, err := gofig.New(&cfg)
 	gofig.Must(err)
 
-	parsers := []gofig.Parser{
-		env.New(),
-		gofig.FromFile(yaml.New(), "/path/to/config.yaml")
-	}
-
-	gofig.Must(fig.Parse(parsers...))
+	// Parse the yaml file and then the envs
+	gofig.Must(gfg.Parse(
+		gofig.FromFile(yaml.New(), "./config.yaml"),
+		env.New(env.HasAndTrimPrefix("GOFIG")),
+	))
 
 	fmt.Println(fmt.Sprintf("%+v", cfg))
 }

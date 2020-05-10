@@ -3,6 +3,7 @@ package gofig
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -40,53 +41,31 @@ func (fn ParserFunc) Values() (<-chan func() (string, interface{}), error) {
 
 // A ReaderParser parses configuration from an io.Reader.
 type ReaderParser interface {
-	Values(src io.Reader) (<-chan func() (key string, value interface{}), error)
-}
-
-// ParseReadCloser parses a ReadCloser.
-type ParseReadCloser struct {
-	parser ReaderParser
-	rc     io.ReadCloser
-}
-
-// Values returns a channel of a func that returns a key value pair.
-func (p *ParseReadCloser) Values() (<-chan func() (key string, value interface{}), error) {
-	return p.parser.Values(p.rc)
-}
-
-// Close closes the ReadCloser.
-func (p *ParseReadCloser) Close() error {
-	if p.rc != nil {
-		return p.rc.Close()
-	}
-
-	return nil
+	Values(src io.ReadCloser) (<-chan func() (key string, value interface{}), error)
 }
 
 // FromString parsers configuration from a string.
 func FromString(parser ReaderParser, v string) Parser {
 	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
-		return parser.Values(strings.NewReader(v))
+		return parser.Values(ioutil.NopCloser(strings.NewReader(v)))
 	})
 }
 
 // FromBytes parsers configuration from a byte slice.
 func FromBytes(parser ReaderParser, b []byte) Parser {
 	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
-		return parser.Values(bytes.NewReader(b))
+		return parser.Values(ioutil.NopCloser(bytes.NewReader(b)))
 	})
 }
 
-// FromFile reads a file and returns a ParseReadCloser.
-// Rember to defer Close().
-func FromFile(parser ReaderParser, path string) (*ParseReadCloser, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
+// FromFile reads a file.
+func FromFile(parser ReaderParser, path string) Parser {
+	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
 
-	return &ParseReadCloser{
-		parser: parser,
-		rc:     f,
-	}, nil
+		return parser.Values(f)
+	})
 }

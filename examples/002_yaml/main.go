@@ -37,18 +37,17 @@ fizz:
 func main() {
 	var cfg Config
 
-	// Create a parser
-	yml := yaml.New()
-
 	// Initialise gofig with the struct config values will be placed into
 	gfg, err := gofig.New(&cfg)
 	gofig.Must(err)
 
-	file, err := gofig.FromFile(yml, "./config.yaml")
-	gofig.Must(err)
+	// Create a parser
+	parser := yaml.New()
 
 	// Parse in order
-	gofig.Must(gfg.Parse(file, gofig.FromString(yml, blob)))
+	gofig.Must(gfg.Parse(
+		gofig.FromFile(parser, "./config.yaml"),
+		gofig.FromString(parser, blob)))
 
 	fmt.Println(fmt.Sprintf("%+v", cfg))
 }

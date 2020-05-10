@@ -30,13 +30,9 @@ func main() {
 	gfg, err := gofig.New(&cfg)
 	gofig.Must(err)
 
-	// Initialise reading yaml config from a file
-	yml, err := gofig.FromFile(yaml.New(), "./config.yaml")
-	gofig.Must(err)
-
 	// Parse the yaml file and then the envs
 	gofig.Must(gfg.Parse(
-		yml,
+		gofig.FromFile(yaml.New(), "./config.yaml"),
 		env.New(env.HasAndTrimPrefix("GOFIG")),
 	))
 

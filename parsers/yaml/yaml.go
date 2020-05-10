@@ -19,7 +19,7 @@ func New() *Parser {
 
 // Values parses yaml configuration, iterating over each key value pair and returning them until
 // parsing has been completed.
-func (p *Parser) Values(src io.Reader) (<-chan func() (string, interface{}), error) {
+func (p *Parser) Values(src io.ReadCloser) (<-chan func() (string, interface{}), error) {
 	var dst map[string]interface{}
 
 	d := yaml.NewDecoder(src)
@@ -34,7 +34,7 @@ func (p *Parser) Values(src io.Reader) (<-chan func() (string, interface{}), err
 		recurse("", dst, ch)
 	}()
 
-	return ch, nil
+	return ch, src.Close()
 }
 
 func recurse(key string, m map[string]interface{}, ch chan func() (string, interface{})) {
