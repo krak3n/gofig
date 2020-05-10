@@ -228,7 +228,10 @@ func unmarshaler(field reflect.Value) Unmarshaler {
 func setString(field reflect.Value, value interface{}) error {
 	v, ok := value.(string)
 	if !ok {
-		return nil // TODO: error
+		return ErrSetValue{
+			Field: field,
+			Value: reflect.ValueOf(value),
+		}
 	}
 
 	field.SetString(v)
@@ -262,11 +265,17 @@ func setInt64(field reflect.Value, value interface{}) error {
 	case float64:
 		i = int64(t)
 	default:
-		return nil // TODO: error type
+		return ErrSetValue{
+			Field: field,
+			Value: reflect.ValueOf(value),
+		}
 	}
 
 	if field.OverflowInt(i) {
-		return nil // TODO: error type
+		return ErrSetValue{
+			Field: field,
+			Value: reflect.ValueOf(value),
+		}
 	}
 
 	field.SetInt(i)
@@ -300,11 +309,17 @@ func setUint64(field reflect.Value, value interface{}) error {
 	case float64:
 		i = uint64(t)
 	default:
-		return nil // TODO: error type
+		return ErrSetValue{
+			Field: field,
+			Value: reflect.ValueOf(value),
+		}
 	}
 
 	if field.OverflowUint(i) {
-		return nil // TODO: error type
+		return ErrSetValue{
+			Field: field,
+			Value: reflect.ValueOf(value),
+		}
 	}
 
 	field.SetUint(i)
@@ -328,11 +343,17 @@ func setFloat64(field reflect.Value, value interface{}) error {
 	case float64:
 		i = float64(t)
 	default:
-		return nil // TODO: error type
+		return ErrSetValue{
+			Field: field,
+			Value: reflect.ValueOf(value),
+		}
 	}
 
 	if field.OverflowFloat(i) {
-		return nil // TODO: error type
+		return ErrSetValue{
+			Field: field,
+			Value: reflect.ValueOf(value),
+		}
 	}
 
 	field.SetFloat(i)
