@@ -1,4 +1,4 @@
-module go.krak3n.codes/gofig/examples/basic
+module go.krak3n.codes/gofig/examples/002_yaml
 
 go 1.13
 
