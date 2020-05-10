@@ -3,6 +3,7 @@
 [![Workflow Status][workflow-image]][workflow-url]
 [![Go Version][goversion-image]][goversion-url]
 [![Documentation][doc-image]][doc-url]
+[![Go Report Card][report-image]][report-url]
 
 GoFig is a configuration loading library for Go. It aims to provide a simple, flexible and
 decoupled API for all your configuration loading needs.
@@ -62,6 +63,8 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 [goversion-url]: https://golang.org/
 [doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg?style=flat&logo=go&logoColor=white
 [doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig
+[report-image]: https://goreportcard.com/badge/github.com/krak3n/gofig?style=flat-square
+[report-url]: https://goreportcard.com/report/github.com/krak3n/gofig
 [env-url]: ./parsers/env
 [json-url]: ./parsers/json
 [toml-url]: ./parsers/toml
