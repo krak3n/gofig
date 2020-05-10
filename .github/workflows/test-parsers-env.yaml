@@ -1,5 +1,5 @@
 on: [push, pull_request]
-name: Test Environment Variable Parser
+name: Environment Variable Parser
 jobs:
   test:
     name: Test

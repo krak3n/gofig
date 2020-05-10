@@ -1,12 +1,14 @@
 # YAML Parser
 
+[![Example][playground-image]][playground-url]
 [![Documentation][doc-image]][doc-url]
+[![Workflow Status][workflow-image]][workflow-image]
 
 This parser loads `yaml` formatted configuration from an `io.ReadCloser`.
 
 ## Example
 
-[Go PlayGround](https://play.golang.org/p/hJLRH9pdhON)
+Click the Playground badge above to see the example running in the Go Playground.
 
 ``` go
 package main
@@ -93,3 +95,7 @@ func create() (string, error) {
 
 [doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
 [doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/yaml
+[playground-image]: https://img.shields.io/badge/Example-play.golang.org-00ADD8.svg
+[playground-url]: https://play.golang.org/p/hJLRH9pdhON
+[workflow-image]: https://github.com/krak3n/gofig/workflows/YAML%20Parser/badge.svg
+[workflow-url]: https://github.com/krak3n/gofig/actions?query=workflow%3A%22YAML+Parser%22
