@@ -8,6 +8,42 @@ unopinionated for your configuration loading needs.
 
 * **Status**: PoC (Proof of Concept)
 
+## Example
+
+``` go
+package main
+
+import (
+	"go.krak3n.codes/gofig"
+	"go.krak3n.codes/gofig/parsers/env"
+)
+
+type Config  struct {
+	Foo struct {
+		Bar string `gofig:"bar"`
+	} `gofig:"foo"`
+	Fizz struct {
+		Buzz string `gofig:"buzz"`
+	} `gofig:"fizz"`
+}
+
+func main() {
+	var cfg Config
+
+	fig, err := gofig.New(&cfg)
+	gofig.Must(err)
+
+	parsers := []gofig.Parser{
+		env.New(),
+		gofig.FromFile(yaml.New(), "/path/to/config.yaml")
+	}
+
+	gofig.Must(fig.Parse(parsers...))
+
+	fmt.Println(fmt.Sprintf("%+v", cfg))
+}
+```
+
 ## Parsers
 
 GoFig implements it's parsers as sub modules. Currently it supports:
