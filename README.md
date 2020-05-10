@@ -1,5 +1,6 @@
 # 🗃️ GoFig
 
+[![Test Workflow][actions-image]][actions-url]
 [![Go 1.12+][goversion-image]][goversion-url]
 [![Documentation][gofig-godoc-image]][gofig-godoc-url]
 
@@ -66,6 +67,8 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 
 [goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg
 [goversion-url]: https://golang.org/
+[actions-image]: https://github.com/krak3n/gofig/workflows/Test/badge.svg
+[actions-url]: https://github.com/krak3n/gofig/actions?query=workflow%3ATest
 [gofig-godoc-image]: https://img.shields.io/badge/godoc-reference-00ADD8.svg
 [gofig-godoc-url]: https://godoc.org/go.krak3n.codes/gofig
 [env-godoc-url]: https://godoc.org/go.krak3n.codes/gofig/parsers/env
