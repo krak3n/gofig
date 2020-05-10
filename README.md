@@ -2,7 +2,7 @@
 
 [![Test Workflow][actions-image]][actions-url]
 [![Go 1.12+][goversion-image]][goversion-url]
-[![Documentation][gofig-godoc-image]][gofig-godoc-url]
+[![Documentation][gofig-doc-image]][gofig-doc-url]
 
 GoFig is a configuration loading library for Go. It aims to provide a simple and intuitive API that is
 unopinionated for your configuration loading needs.
@@ -51,8 +51,8 @@ func main() {
 
 GoFig implements it's parsers as sub modules. Currently it supports:
 
-* [Environment Variables][env-godoc-url]
-* [YAML][yaml-godoc-url]
+* [Environment Variables][env-doc-url]
+* [YAML][yaml-doc-url]
 
 ### Planned
 
@@ -69,7 +69,7 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 [goversion-url]: https://golang.org/
 [actions-image]: https://github.com/krak3n/gofig/workflows/Test/badge.svg
 [actions-url]: https://github.com/krak3n/gofig/actions?query=workflow%3ATest
-[gofig-godoc-image]: https://img.shields.io/badge/godoc-reference-00ADD8.svg
-[gofig-godoc-url]: https://godoc.org/go.krak3n.codes/gofig
-[env-godoc-url]: https://godoc.org/go.krak3n.codes/gofig/parsers/env
-[yaml-godoc-url]: https://godoc.org/go.krak3n.codes/gofig/parsers/yaml
+[gofig-doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
+[gofig-doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig
+[env-doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/env
+[yaml-doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/yaml
