@@ -1,4 +1,4 @@
-# 📑GoFig
+# 🗃️ GoFig
 
 [![Go 1.12+][goversion-image]][goversion-url]
 [![Documentation][gofig-godoc-image]][gofig-godoc-url]
