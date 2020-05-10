@@ -1,8 +1,9 @@
 # Environment Variable Parser
 
+[![Workflow Status][workflow-image]][workflow-url]
+[![Go Version][goversion-image]][goversion-url]
 [![Example][playground-image]][playground-url]
 [![Documentation][doc-image]][doc-url]
-[![Workflow Status][workflow-image]][workflow-image]
 
 This parser loads configuration from OS Environment Variables.
 
@@ -57,9 +58,11 @@ func main() {
 }
 ```
 
-[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
-[doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/env
-[playground-image]: https://img.shields.io/badge/Example-play.golang.org-00ADD8.svg
-[playground-url]: https://play.golang.org/p/atkM_FbS0fq
 [workflow-image]: https://github.com/krak3n/gofig/workflows/Environment%20Variable%20Parser/badge.svg
 [workflow-url]: https://github.com/krak3n/gofig/actions?query=workflow%3A%22Environment+Variable+Parser%22
+[goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg
+[goversion-url]: https://golang.org/
+[playground-image]: https://img.shields.io/badge/Example-play.golang.org-00ADD8.svg
+[playground-url]: https://play.golang.org/p/atkM_FbS0fq
+[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
+[doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/env

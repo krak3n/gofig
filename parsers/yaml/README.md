@@ -1,8 +1,9 @@
 # YAML Parser
 
+[![Workflow Status][workflow-image]][workflow-url]
+[![Go Version][goversion-image]][goversion-url]
 [![Example][playground-image]][playground-url]
 [![Documentation][doc-image]][doc-url]
-[![Workflow Status][workflow-image]][workflow-image]
 
 This parser loads `yaml` formatted configuration from an `io.ReadCloser`.
 
@@ -93,9 +94,11 @@ func create() (string, error) {
 }
 ```
 
-[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
-[doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/yaml
-[playground-image]: https://img.shields.io/badge/Example-play.golang.org-00ADD8.svg
-[playground-url]: https://play.golang.org/p/hJLRH9pdhON
 [workflow-image]: https://github.com/krak3n/gofig/workflows/YAML%20Parser/badge.svg
 [workflow-url]: https://github.com/krak3n/gofig/actions?query=workflow%3A%22YAML+Parser%22
+[goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg
+[goversion-url]: https://golang.org/
+[playground-image]: https://img.shields.io/badge/Example-play.golang.org-00ADD8.svg
+[playground-url]: https://play.golang.org/p/hJLRH9pdhON
+[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
+[doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/yaml
