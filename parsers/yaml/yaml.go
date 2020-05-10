@@ -9,8 +9,7 @@ import (
 )
 
 // Parser parses YAML documents.
-type Parser struct {
-}
+type Parser struct{}
 
 // New constructs a new Parser.
 func New() *Parser {

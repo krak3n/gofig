@@ -52,11 +52,11 @@ func main() {
 GoFig implements it's parsers as sub modules. Currently it supports:
 
 * [Environment Variables][env-url]
+* [TOML][toml-url]
 * [YAML][yaml-url]
 
 ### Planned
 
-* TOML
 * JSON
 
 [goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg
@@ -66,4 +66,5 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 [doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
 [doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig
 [env-url]: ./parsers/env
+[toml-url]: ./parsers/toml
 [yaml-url]: ./parsers/yaml
