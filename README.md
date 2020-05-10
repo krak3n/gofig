@@ -56,15 +56,11 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 * [TOML][toml-url]
 * [YAML][yaml-url]
 
-### Planned
-
-* JSON
-
-[goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg
-[goversion-url]: https://golang.org/
-[workflow-image]: https://github.com/krak3n/gofig/workflows/GoFig/badge.svg
+[workflow-image]: https://img.shields.io/github/workflow/status/krak3n/gofig/GoFig?style=flat&logo=github&logoColor=white&label=Workflow
 [workflow-url]: https://github.com/krak3n/gofig/actions?query=workflow%3AGoFig
-[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
+[goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg?style=flat&logo=go&logoColor=white
+[goversion-url]: https://golang.org/
+[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg?style=flat&logo=go&logoColor=white
 [doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig
 [env-url]: ./parsers/env
 [json-url]: ./parsers/json

@@ -94,11 +94,11 @@ func create() (string, error) {
 }
 ```
 
-[workflow-image]: https://github.com/krak3n/gofig/workflows/YAML%20Parser/badge.svg
+[workflow-image]: https://img.shields.io/github/workflow/status/krak3n/gofig/YAML%20Parser?style=flat&logo=github&logoColor=white&label=Workflow
 [workflow-url]: https://github.com/krak3n/gofig/actions?query=workflow%3A%22YAML+Parser%22
-[goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg
+[goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg?style=flat&logo=go&logoColor=white
 [goversion-url]: https://golang.org/
-[playground-image]: https://img.shields.io/badge/Example-play.golang.org-00ADD8.svg
+[playground-image]: https://img.shields.io/badge/Example-play.golang.org-00ADD8.svg?style=flat&logo=go&logoColor=white
 [playground-url]: https://play.golang.org/p/hJLRH9pdhON
-[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
+[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg?style=flat&logo=go&logoColor=white
 [doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/yaml
