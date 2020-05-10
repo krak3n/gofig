@@ -51,8 +51,8 @@ func main() {
 
 GoFig implements it's parsers as sub modules. Currently it supports:
 
-* [Environment Variables][env-doc-url]
-* [YAML][yaml-doc-url]
+* [Environment Variables][env-url]
+* [YAML][yaml-url]
 
 ### Planned
 
@@ -67,9 +67,9 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 
 [goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg
 [goversion-url]: https://golang.org/
-[actions-image]: https://github.com/krak3n/gofig/workflows/Test/badge.svg
-[actions-url]: https://github.com/krak3n/gofig/actions?query=workflow%3ATest
+[actions-image]: https://github.com/krak3n/gofig/workflows/Test%20Library/badge.svg
+[actions-url]: https://github.com/krak3n/gofig/actions?query=workflow%3ATest%20Library
 [gofig-doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
 [gofig-doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig
-[env-doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/env
-[yaml-doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/yaml
+[env-url]: ./parsers/env
+[yaml-url]: ./parsers/yaml

@@ -1,3 +1,14 @@
+# Environment Variable Parser
+
+[![Documentation][doc-image]][doc-url]
+
+This parser loads configuration from OS Environment Variables.
+
+## Example
+
+[Go PlayGround](https://play.golang.org/p/atkM_FbS0fq)
+
+``` go
 package main
 
 import (
@@ -42,3 +53,7 @@ func main() {
 	fmt.Println("Bar:", cfg.Bar)             // bar
 	fmt.Println("Fizz.Buzz:", cfg.Fizz.Buzz) // buzz
 }
+```
+
+[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
+[doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/env

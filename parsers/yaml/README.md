@@ -1,7 +1,19 @@
+# YAML Parser
+
+[![Documentation][doc-image]][doc-url]
+
+This parser loads `yaml` formatted configuration from an `io.ReadCloser`.
+
+## Example
+
+[Go PlayGround](https://play.golang.org/p/hJLRH9pdhON)
+
+``` go
 package main
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"go.krak3n.codes/gofig"
 	"go.krak3n.codes/gofig/parsers/yaml"
@@ -44,10 +56,40 @@ func main() {
 	// Create a parser
 	parser := yaml.New()
 
+	// write some data to a config file
+	path, err := create()
+	gofig.Must(err)
+
 	// Parse in order
 	gofig.Must(gfg.Parse(
-		gofig.FromFile(parser, "./config.yaml"),
+		gofig.FromFile(parser, path),
 		gofig.FromString(parser, blob)))
 
 	fmt.Println(fmt.Sprintf("%+v", cfg))
 }
+
+const contents = `
+a:
+  b:
+    c: [1,2,3]
+c:
+  d:
+    e:
+      f: [1,2,3]`
+
+func create() (string, error) {
+	f, err := ioutil.TempFile("", "yaml")
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := f.Write([]byte(contents)); err != nil {
+		return "", err
+	}
+
+	return f.Name(), nil
+}
+```
+
+[doc-image]: https://img.shields.io/badge/Documentation-pkg.go.dev-00ADD8.svg
+[doc-url]: https://pkg.go.dev/go.krak3n.codes/gofig/parsers/yaml
