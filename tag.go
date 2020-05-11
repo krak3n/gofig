@@ -1,6 +1,7 @@
 package gofig
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -9,6 +10,10 @@ const omitempty = "omitempty"
 type tag struct {
 	name      string
 	omitempty bool
+}
+
+func (t tag) Stirng() string {
+	return fmt.Sprintf("name=%s, omitempty=%s", t.name, t.omitempty)
 }
 
 func parseTag(v string) tag {

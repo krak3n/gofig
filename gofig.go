@@ -14,24 +14,32 @@ const (
 type Config struct {
 	logger Logger
 	debug  bool
-	fields map[string]reflect.Value
+	fields Fields
 }
 
 // New constructs a new Config
 func New(dst interface{}, opts ...Option) (*Config, error) {
-	fields, err := load(dst)
-	if err != nil {
-		return nil, err
+	t := reflect.TypeOf(dst)
+	v := reflect.ValueOf(dst)
+
+	if t.Kind() != reflect.Ptr || v.IsNil() {
+		return nil, ErrInvalidValue{reflect.TypeOf(v)}
+	}
+
+	if v.Elem().Kind() != reflect.Struct {
+		return nil, ErrInvalidValue{reflect.TypeOf(v)}
 	}
 
 	c := &Config{
 		logger: DefaultLogger(),
-		fields: fields,
+		fields: make(Fields),
 	}
 
 	for _, opt := range opts {
 		opt.apply(c)
 	}
+
+	c.flatten(v.Elem(), t.Elem(), "")
 
 	return c, nil
 }
@@ -71,7 +79,7 @@ func (c *Config) parse(p Parser) error {
 
 		key, val := fn()
 
-		if field, ok := c.fields[strings.ToLower(key)]; ok {
+		if field, ok := c.fields[key]; ok {
 			c.log().Printf("set key %s to %v", key, val)
 
 			if err := setValue(field, val); err != nil {
@@ -84,11 +92,11 @@ func (c *Config) parse(p Parser) error {
 		// If the field was not found this could be a map element value.
 		// This will always be the leaf node.
 		// First we find the root map at the top of the stack.
-		if path, m, ok := c.mapRoot(key); ok {
+		if field, ok := c.mapRoot(key); ok {
 			c.log().Printf("set key %s to %v", key, val)
 
-			key = strings.Trim(strings.Replace(key, path, "", -1), ".")
-			if err := setMap(m, key, val); err != nil {
+			key = strings.Trim(strings.Replace(key, field.Key, "", -1), ".")
+			if err := setMap(field, key, val); err != nil {
 				return err
 			}
 
@@ -99,52 +107,8 @@ func (c *Config) parse(p Parser) error {
 	}
 }
 
-func (c *Config) mapRoot(key string) (string, reflect.Value, bool) {
-	var v reflect.Value
-
-	elms := strings.Split(key, ".")
-
-	key = strings.Join(elms[:len(elms)-1], ".")
-	if key == "" {
-		return key, v, false
-	}
-
-	field, ok := c.fields[key]
-	if !ok {
-		return c.mapRoot(key)
-	}
-
-	if field.Kind() != reflect.Map {
-		return key, v, false
-	}
-
-	return key, field, true
-}
-
-// load validates the given value ensuring it is a pointer to a struct. Once validated the struct
-// fields will be flattened into a single map where the key is path to a field and the value
-// a reflect.Value.
-func load(v interface{}) (map[string]reflect.Value, error) {
-	rt := reflect.TypeOf(v)
-	rv := reflect.ValueOf(v)
-
-	if rv.Kind() != reflect.Ptr || rv.IsNil() {
-		return nil, ErrInvalidValue{reflect.TypeOf(v)}
-	}
-
-	if rv.Elem().Kind() != reflect.Struct {
-		return nil, ErrInvalidValue{reflect.TypeOf(v)}
-	}
-
-	fields := make(map[string]reflect.Value)
-
-	flatten(rv.Elem(), rt.Elem(), "", fields)
-
-	return fields, nil
-}
-
 // flatten recursively flattens a struct.
-func flatten(rv reflect.Value, rt reflect.Type, key string, fields map[string]reflect.Value) {
+func (c *Config) flatten(rv reflect.Value, rt reflect.Type, key string) {
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Field(i)
 		ft := rt.Field(i)
@@ -160,14 +124,39 @@ func flatten(rv reflect.Value, rt reflect.Type, key string, fields map[string]re
 				}
 			}
 
-			name := strings.Trim(strings.Join(append(strings.Split(key, "."), t.name), "."), ".")
+			c.log().Print("parsed field:%s, tag:%s", ft.Name, t)
+
+			path := strings.Trim(strings.Join(append(strings.Split(key, "."), t.name), "."), ".")
 
 			switch fv.Kind() {
 			case reflect.Struct:
-				flatten(fv, ft.Type, name, fields)
+				c.flatten(fv, ft.Type, path)
 			default:
-				fields[strings.ToLower(name)] = fv
+				c.fields.Set(path, Field{path, fv})
 			}
 		}
 	}
+}
+
+// mapRoot recursively looks for a root map for the given key.
+func (c *Config) mapRoot(key string) (Field, bool) {
+	var f Field
+
+	elms := strings.Split(key, ".")
+
+	key = strings.Join(elms[:len(elms)-1], ".")
+	if key == "" {
+		return f, false
+	}
+
+	field, ok := c.fields[key]
+	if !ok {
+		return c.mapRoot(key)
+	}
+
+	if field.Value.Kind() != reflect.Map {
+		return f, false
+	}
+
+	return field, true
 }

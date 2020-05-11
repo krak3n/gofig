@@ -9,46 +9,49 @@ type Unmarshaler interface {
 
 // unmarshaler checks to see if the given field implements the Unmarshaler interface.
 // If it does the Unmarshaler is returned, else nil is returned.
-func unmarshaler(field reflect.Value) Unmarshaler {
-	if field.Kind() != reflect.Ptr && field.Type().Name() != "" && field.CanAddr() {
-		field = field.Addr()
+// Lifted from go json stdlib
+func unmarshaler(field Field) Unmarshaler {
+	fv := field.Value
+
+	if fv.Kind() != reflect.Ptr && fv.Type().Name() != "" && fv.CanAddr() {
+		fv = fv.Addr()
 	}
 
 	for {
-		if field.Kind() == reflect.Interface && !field.IsNil() {
-			e := field.Elem()
+		if fv.Kind() == reflect.Interface && !fv.IsNil() {
+			e := fv.Elem()
 			if e.Kind() == reflect.Ptr && !e.IsNil() && e.Elem().Kind() == reflect.Ptr {
-				field = e
+				fv = e
 				continue
 			}
 		}
 
-		if field.Kind() != reflect.Ptr {
+		if fv.Kind() != reflect.Ptr {
 			break
 		}
 
-		if field.CanSet() {
+		if fv.CanSet() {
 			break
 		}
 
-		if field.Elem().Kind() == reflect.Interface && field.Elem().Elem() == field {
-			field = field.Elem()
+		if fv.Elem().Kind() == reflect.Interface && fv.Elem().Elem() == fv {
+			fv = fv.Elem()
 			break
 		}
 
-		if field.IsNil() {
-			field.Set(reflect.New(field.Type().Elem()))
+		if fv.IsNil() {
+			fv.Set(reflect.New(fv.Type().Elem()))
 		}
 
-		if field.Type().NumMethod() > 0 && field.CanInterface() {
-			if u, ok := field.Interface().(Unmarshaler); ok {
+		if fv.Type().NumMethod() > 0 && fv.CanInterface() {
+			if u, ok := fv.Interface().(Unmarshaler); ok {
 				return u
 			}
 
 			break
 		}
 
-		field = field.Elem()
+		fv = fv.Elem()
 	}
 
 	return nil
