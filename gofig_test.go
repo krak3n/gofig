@@ -9,6 +9,7 @@ import (
 func TestParse(t *testing.T) {
 	type Config struct {
 		String          string                                 `gofig:"string"`
+		Int             int                                    `gofig:"int"`
 		Slice           []int                                  `gofig:"slice"`
 		Map             map[string]string                      `gofig:"map"`
 		NestedMap       map[string]map[string][]int            `gofig:"nestedmap"`
@@ -28,6 +29,17 @@ func TestParse(t *testing.T) {
 			}(),
 			want: Config{
 				String: "bar",
+			},
+		},
+		"Int": {
+			parser: func() *InMemoryParser {
+				p := NewInMemoryParser()
+				p.Add("int", int(1))
+
+				return p
+			}(),
+			want: Config{
+				Int: int(1),
 			},
 		},
 		"Slice": {
