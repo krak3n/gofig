@@ -20,6 +20,7 @@ import (
 
 	"go.krak3n.codes/gofig"
 	"go.krak3n.codes/gofig/parsers/env"
+	"go.krak3n.codes/gofig/parsers/yaml"
 )
 
 type Config  struct {
