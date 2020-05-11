@@ -13,7 +13,7 @@ type tag struct {
 }
 
 func (t tag) Stirng() string {
-	return fmt.Sprintf("name=%s, omitempty=%s", t.name, t.omitempty)
+	return fmt.Sprintf("name=%s, omitempty=%t", t.name, t.omitempty)
 }
 
 func parseTag(v string) tag {
