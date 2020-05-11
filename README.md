@@ -59,12 +59,12 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 
 # Roadmap
 
-Gofig is still very young with a fluid API. These are features that are planned:
-
+* Test Suite / Code Coverage reporting
+* Helpful errors
 * Support pointer values
 * Default Values via a struct tag, e.g: `gofig:"foo,default=bar"`
 * Support `omitempty` for pointer values which should not be initialised to their zero value.
-* Support notification of config changes via `Notifier` intrerface
+* Support notification of config changes via `Notifier` interface
 * Implement File notifier on changes to files via `fsnotify`
 * Add support for:
   * ETCD Parser / Notifier
