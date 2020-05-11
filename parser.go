@@ -44,6 +44,40 @@ type ReaderParser interface {
 	Values(src io.ReadCloser) (<-chan func() (key string, value interface{}), error)
 }
 
+// An InMemoryParser holds key value pairs in memory implementing the Parser interface.
+type InMemoryParser struct {
+	values map[string]interface{}
+}
+
+// Add adds a value to the in memory values.
+func (p *InMemoryParser) Add(k string, v interface{}) {
+	p.values[k] = v
+}
+
+// Delete deletes a value.
+func (p *InMemoryParser) Delete(k string) {
+	delete(p.values, k)
+}
+
+// Values iterates over the in memory values returning then on the returned channel.
+func (p *InMemoryParser) Values() (<-chan func() (string, interface{}), error) {
+	ch := make(chan func() (string, interface{}))
+
+	go func() {
+		for k, v := range p.values {
+			ch <- (func(key string, val interface{}) func() (string, interface{}) {
+				return func() (string, interface{}) {
+					return key, val
+				}
+			}(k, v))
+		}
+
+		close(ch)
+	}()
+
+	return ch, nil
+}
+
 // FromString parsers configuration from a string.
 func FromString(parser ReaderParser, v string) Parser {
 	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
