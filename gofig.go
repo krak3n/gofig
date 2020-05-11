@@ -124,7 +124,7 @@ func (c *Config) flatten(rv reflect.Value, rt reflect.Type, key string) {
 				}
 			}
 
-			c.log().Print("parsed field:%s, tag:%s", ft.Name, t)
+			c.log().Printf("parsed field:%s, tag:%s", ft.Name, t)
 
 			path := strings.Trim(strings.Join(append(strings.Split(key, "."), t.name), "."), ".")
 
