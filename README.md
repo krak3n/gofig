@@ -57,6 +57,19 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 * [TOML][toml-url]
 * [YAML][yaml-url]
 
+# Roadmap
+
+Gofig is still very young with a fluid API. These are features that are planned:
+
+* Support pointer values
+* Default Values via a struct tag, e.g: `gofig:"foo,default=bar"`
+* Support `omitempty` for pointer values which should not be initialised to their zero value.
+* Support notification of config changes via `Notifier` intrerface
+* Implement File notifier on changes to files via `fsnotify`
+* Add support for:
+  * ETCD Parser / Notifier
+  * Consul Parser / Notifier
+
 [workflow-image]: https://img.shields.io/github/workflow/status/krak3n/gofig/GoFig?style=flat&logo=github&logoColor=white&label=Workflow
 [workflow-url]: https://github.com/krak3n/gofig/actions?query=workflow%3AGoFig
 [goversion-image]: https://img.shields.io/badge/Go-1.13+-00ADD8.svg?style=flat&logo=go&logoColor=white
