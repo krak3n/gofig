@@ -178,53 +178,55 @@ func setSlice(field Field, value interface{}) error {
 
 // setMap sets a field to a map, also handles nested maps.
 func setMap(field Field, key string, value interface{}) error {
-	fv := field.Value
-	ft := field.Value.Type()
-
-	if fv.IsNil() {
-		if ft.Key().Kind() != reflect.String {
+	if field.Value.IsNil() {
+		if field.Value.Type().Key().Kind() != reflect.String {
 			return ErrInvalidValue{
-				Type: ft.Key(),
+				Type: field.Value.Type().Key(),
 			}
 		}
 
-		field.Set(reflect.MakeMap(reflect.MapOf(ft.Key(), ft.Elem())))
+		field.Set(reflect.MakeMap(reflect.MapOf(
+			field.Value.Type().Key(),
+			field.Value.Type().Elem())))
 	}
 
 	// Nested map
-	if ft.Elem().Kind() == reflect.Map {
+	if field.Value.Type().Elem().Kind() == reflect.Map {
 		elms := strings.Split(key, ".")
-		key = strings.Join(elms[:len(elms)-1], ".")
 
+		parent, children := elms[0], elms[1:]
+		key = strings.Join(children, ".")
 		if key == "" {
 			return nil
 		}
 
-		v := reflect.New(ft.Elem())
-		f := Field{key, v.Elem()}
-		if err := setMap(f, key, value); err != nil {
+		m := field.Value.MapIndex(reflect.ValueOf(parent))
+		if !m.IsValid() {
+			m = reflect.New(field.Value.Type().Elem()).Elem()
+		}
+
+		if err := setMap(Field{key, m}, key, value); err != nil {
 			return err
 		}
 
-		fv.SetMapIndex(reflect.ValueOf(elms[0]), v.Elem())
+		field.Value.SetMapIndex(reflect.ValueOf(elms[0]), m)
 
 		return nil
 	}
 
-	if reflect.ValueOf(value).Kind() != ft.Elem().Kind() {
+	if reflect.ValueOf(value).Kind() != field.Value.Type().Elem().Kind() {
 		return ErrInvalidConversion{
 			From: reflect.ValueOf(value).Kind(),
-			To:   ft.Elem().Kind(),
+			To:   field.Value.Type().Elem().Kind(),
 		}
 	}
 
-	v := reflect.New(ft.Elem())
-	f := Field{key, v.Elem()}
-	if err := setValue(f, value); err != nil {
+	v := reflect.New(field.Value.Type().Elem())
+	if err := setValue(Field{key, v.Elem()}, value); err != nil {
 		return err
 	}
 
-	fv.SetMapIndex(reflect.ValueOf(key), v.Elem())
+	field.Value.SetMapIndex(reflect.ValueOf(key), v.Elem())
 
 	return nil
 }

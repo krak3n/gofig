@@ -40,7 +40,7 @@ func (f Field) SetString(x string) {
 
 // SetInt sets the fields value to the given int.
 func (f Field) SetInt(x int64) error {
-	if !f.Value.OverflowInt(x) {
+	if f.Value.OverflowInt(x) {
 		return ErrSetValue{
 			Field: f.Value,
 			Value: reflect.ValueOf(x),
@@ -54,7 +54,7 @@ func (f Field) SetInt(x int64) error {
 
 // SetUint sets the fields value to the given uint.
 func (f Field) SetUint(x uint64) error {
-	if !f.Value.OverflowUint(x) {
+	if f.Value.OverflowUint(x) {
 		return ErrSetValue{
 			Field: f.Value,
 			Value: reflect.ValueOf(x),
@@ -68,7 +68,7 @@ func (f Field) SetUint(x uint64) error {
 
 // SetFloat sets the fields value to the given float.
 func (f Field) SetFloat(x float64) error {
-	if !f.Value.OverflowFloat(x) {
+	if f.Value.OverflowFloat(x) {
 		return ErrSetValue{
 			Field: f.Value,
 			Value: reflect.ValueOf(x),

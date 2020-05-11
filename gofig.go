@@ -124,9 +124,9 @@ func (c *Config) flatten(rv reflect.Value, rt reflect.Type, key string) {
 				}
 			}
 
-			c.log().Printf("parsed field:%s, tag:%s", ft.Name, t)
-
 			path := strings.Trim(strings.Join(append(strings.Split(key, "."), t.name), "."), ".")
+
+			c.log().Printf("<Field %s kind:%s path:%s tag:%s>", ft.Name, fv.Kind(), path, t.Stirng())
 
 			switch fv.Kind() {
 			case reflect.Struct:

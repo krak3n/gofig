@@ -78,6 +78,13 @@ func (p *InMemoryParser) Values() (<-chan func() (string, interface{}), error) {
 	return ch, nil
 }
 
+// NewInMemoryParser constructs a new InMemoryParser.
+func NewInMemoryParser() *InMemoryParser {
+	return &InMemoryParser{
+		values: make(map[string]interface{}),
+	}
+}
+
 // FromString parsers configuration from a string.
 func FromString(parser ReaderParser, v string) Parser {
 	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
