@@ -166,7 +166,7 @@ func flatten(rv reflect.Value, rt reflect.Type, key string, fields map[string]re
 			case reflect.Struct:
 				flatten(fv, ft.Type, name, fields)
 			default:
-				fields[name] = fv
+				fields[strings.ToLower(name)] = fv
 			}
 		}
 	}
