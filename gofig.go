@@ -77,33 +77,30 @@ func (c *Config) parse(p Parser) error {
 			return nil // Done
 		}
 
+		// Call the function passed on the channel returnin key value pair
 		key, val := fn()
 
-		if field, ok := c.fields[key]; ok {
-			c.log().Printf("set key %s to %v", key, val)
-
-			if err := setValue(field, val); err != nil {
-				return err
+		// Lookup the key
+		field, ok := c.fields[key]
+		if !ok {
+			// If the field was not found this could be a map element value.
+			// This will always be the leaf node.
+			if field, ok = c.mapRoot(key); ok {
+				key = strings.Trim(strings.Replace(key, field.Key, "", -1), ".")
+				if err := setMap(field, key, val); err != nil {
+					return err
+				}
+			} else {
+				c.log().Printf("%s key not found", key)
 			}
 
 			continue
 		}
 
-		// If the field was not found this could be a map element value.
-		// This will always be the leaf node.
-		// First we find the root map at the top of the stack.
-		if field, ok := c.mapRoot(key); ok {
-			c.log().Printf("set key %s to %v", key, val)
-
-			key = strings.Trim(strings.Replace(key, field.Key, "", -1), ".")
-			if err := setMap(field, key, val); err != nil {
-				return err
-			}
-
-			continue
+		// Attempt to set the fields value
+		if err := setValue(field, val); err != nil {
+			return err
 		}
-
-		c.log().Printf("ignoring %s of value %v", key, val)
 	}
 }
 
