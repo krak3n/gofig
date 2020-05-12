@@ -15,6 +15,7 @@ type Config struct {
 	logger Logger
 	debug  bool
 	fields Fields
+	kfmtr  Formatter
 }
 
 // New constructs a new Config
@@ -33,6 +34,7 @@ func New(dst interface{}, opts ...Option) (*Config, error) {
 	c := &Config{
 		logger: DefaultLogger(),
 		fields: make(Fields),
+		kfmtr:  KeyFormatter(LowerCaseFormatter()),
 	}
 
 	for _, opt := range opts {
@@ -79,6 +81,7 @@ func (c *Config) parse(p Parser) error {
 
 		// Call the function passed on the channel returnin key value pair
 		key, val := fn()
+		key = c.kfmtr.Format(key)
 
 		// Lookup the key
 		field, ok := c.fields[key]
@@ -113,7 +116,7 @@ func (c *Config) flatten(rv reflect.Value, rt reflect.Type, key string) {
 		if fv.CanSet() {
 			tag := TagFromStructField(ft, DefaultStructTag)
 
-			path := strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), ".")
+			path := c.kfmtr.Format(strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), "."))
 
 			c.log().Printf("<Field %s kind:%s path:%s tag:%s>", ft.Name, fv.Kind(), path, tag)
 

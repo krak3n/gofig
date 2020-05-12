@@ -19,6 +19,13 @@ func SetLogger(l Logger) Option {
 	})
 }
 
+// SetKeyFormatter sets the formatter to be used for recieved keys from parsers.
+func SetKeyFormatter(fmtr Formatter) Option {
+	return OptionFunc(func(c *Config) {
+		c.kfmtr = KeyFormatter(fmtr)
+	})
+}
+
 // WithDebug enables debugging. Use SetLogger to customise the logging output.
 func WithDebug() Option {
 	return OptionFunc(func(c *Config) {

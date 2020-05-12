@@ -18,6 +18,7 @@ func TestParse(t *testing.T) {
 
 	cases := map[string]struct {
 		parser *InMemoryParser
+		opts   []Option
 		want   Config
 	}{
 		"String": {
@@ -118,9 +119,78 @@ func TestParse(t *testing.T) {
 
 			var cfg Config
 
-			g, err := New(&cfg, WithDebug(), SetLogger(LoggerFunc(func(v ...interface{}) {
-				t.Log(v...)
-			})))
+			opts := append(
+				tc.opts,
+				WithDebug(),
+				SetLogger(LoggerFunc(func(v ...interface{}) {
+					t.Log(v...)
+				})))
+
+			g, err := New(&cfg, opts...)
+
+			if err != nil {
+				t.Fatal("want nil error, got:", err)
+			}
+
+			if err := g.Parse(tc.parser); err != nil {
+				t.Fatal("want nil error, got:", err)
+			}
+
+			if !cmp.Equal(tc.want, cfg) {
+				t.Errorf("want %+v, got %+v", tc.want, cfg)
+			}
+		})
+	}
+}
+
+func TestKeyFormatting(t *testing.T) {
+	type Fizz struct {
+		Buzz string `gofig:"buzz"`
+	}
+
+	type Config struct {
+		Foo  string `gofig:"foo"`
+		Fizz Fizz   `gofig:"FIZZ"`
+	}
+
+	cases := map[string]struct {
+		parser *InMemoryParser
+		opts   []Option
+		want   Config
+	}{
+		"ParseUpperToLower": {
+			parser: func() *InMemoryParser {
+				p := NewInMemoryParser()
+				p.Add("FOO", "bar")
+				p.Add("FIZZ.BUZZ", "baz")
+
+				return p
+			}(),
+			want: Config{
+				Foo: "bar",
+				Fizz: Fizz{
+					Buzz: "baz",
+				},
+			},
+		},
+	}
+
+	for name, testCase := range cases {
+		tc := testCase
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			var cfg Config
+
+			opts := append(
+				tc.opts,
+				WithDebug(),
+				SetLogger(LoggerFunc(func(v ...interface{}) {
+					t.Log(v...)
+				})))
+
+			g, err := New(&cfg, opts...)
 
 			if err != nil {
 				t.Fatal("want nil error, got:", err)
