@@ -1,33 +1,44 @@
 package gofig
 
 import (
-	"fmt"
+	"reflect"
 	"strings"
 )
 
 const omitempty = "omitempty"
 
-type tag struct {
-	name      string
-	omitempty bool
+// Tag is a gofig struct tag.
+type Tag struct {
+	Name      string
+	OmitEmpty bool
+	RawTag    string
 }
 
-func (t tag) Stirng() string {
-	return fmt.Sprintf("name=%s, omitempty=%t", t.name, t.omitempty)
+func (t Tag) String() string {
+	return t.RawTag
 }
 
-func parseTag(v string) tag {
-	var t tag
+// TagFromStructField returns a Tag from the struct fields tag.
+func TagFromStructField(field reflect.StructField, tag string) Tag {
+	t := Tag{
+		Name: field.Name,
+	}
 
-	for i, v := range strings.Split(v, ",") {
-		if i == 0 {
-			t.name = v
-			continue
-		}
+	if v, ok := field.Tag.Lookup(DefaultStructTag); ok {
+		t.RawTag = v
 
-		if v == omitempty {
-			t.omitempty = true
-			continue
+		for i, v := range strings.Split(v, ",") {
+			if i == 0 {
+				t.Name = v
+
+				continue
+			}
+
+			if v == omitempty {
+				t.OmitEmpty = true
+
+				continue
+			}
 		}
 	}
 

@@ -111,19 +111,11 @@ func (c *Config) flatten(rv reflect.Value, rt reflect.Type, key string) {
 		ft := rt.Field(i)
 
 		if fv.CanSet() {
-			var t tag
+			tag := TagFromStructField(ft, DefaultStructTag)
 
-			if v, ok := ft.Tag.Lookup(DefaultStructTag); ok {
-				t = parseTag(v)
-			} else {
-				t = tag{
-					name: ft.Name,
-				}
-			}
+			path := strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), ".")
 
-			path := strings.Trim(strings.Join(append(strings.Split(key, "."), t.name), "."), ".")
-
-			c.log().Printf("<Field %s kind:%s path:%s tag:%s>", ft.Name, fv.Kind(), path, t.Stirng())
+			c.log().Printf("<Field %s kind:%s path:%s tag:%s>", ft.Name, fv.Kind(), path, tag)
 
 			switch fv.Kind() {
 			case reflect.Struct:
