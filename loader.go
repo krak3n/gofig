@@ -10,16 +10,16 @@ const (
 	DefaultStructTag = "gofig"
 )
 
-// Config parses configuration from one or more sources.
-type Config struct {
+// Loader parses configuration from one or more sources.
+type Loader struct {
 	logger Logger
 	debug  bool
 	fields Fields
 	kfmtr  Formatter
 }
 
-// New constructs a new Config
-func New(dst interface{}, opts ...Option) (*Config, error) {
+// New constructs a new Loader
+func New(dst interface{}, opts ...Option) (*Loader, error) {
 	t := reflect.TypeOf(dst)
 	v := reflect.ValueOf(dst)
 
@@ -31,7 +31,7 @@ func New(dst interface{}, opts ...Option) (*Config, error) {
 		return nil, ErrInvalidValue{reflect.TypeOf(v)}
 	}
 
-	c := &Config{
+	c := &Loader{
 		logger: DefaultLogger(),
 		fields: make(Fields),
 		kfmtr:  KeyFormatter(LowerCaseFormatter()),
@@ -47,7 +47,7 @@ func New(dst interface{}, opts ...Option) (*Config, error) {
 }
 
 // Parse parses the given parsers in order. If any one parser fails an error will be returned.
-func (c *Config) Parse(parsers ...Parser) error {
+func (c *Loader) Parse(parsers ...Parser) error {
 	for _, p := range parsers {
 		if err := c.parse(p); err != nil {
 			return err
@@ -58,7 +58,7 @@ func (c *Config) Parse(parsers ...Parser) error {
 }
 
 // log returns a logger if debug is true
-func (c *Config) log() Logger {
+func (c *Loader) log() Logger {
 	if c.debug {
 		return c.logger
 	}
@@ -67,7 +67,7 @@ func (c *Config) log() Logger {
 }
 
 // parse parses an single parser.
-func (c *Config) parse(p Parser) error {
+func (c *Loader) parse(p Parser) error {
 	ch, err := p.Values()
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (c *Config) parse(p Parser) error {
 			return nil // Done
 		}
 
-		// Call the function passed on the channel returnin key value pair
+		// Call the function passed on the channel returning key value pair
 		key, val := fn()
 		key = c.kfmtr.Format(key)
 
@@ -108,7 +108,7 @@ func (c *Config) parse(p Parser) error {
 }
 
 // flatten recursively flattens a struct.
-func (c *Config) flatten(rv reflect.Value, rt reflect.Type, key string) {
+func (c *Loader) flatten(rv reflect.Value, rt reflect.Type, key string) {
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Field(i)
 		ft := rt.Field(i)
@@ -131,7 +131,7 @@ func (c *Config) flatten(rv reflect.Value, rt reflect.Type, key string) {
 }
 
 // mapRoot recursively looks for a root map for the given key.
-func (c *Config) mapRoot(key string) (Field, bool) {
+func (c *Loader) mapRoot(key string) (Field, bool) {
 	var f Field
 
 	elms := strings.Split(key, ".")
