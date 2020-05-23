@@ -13,22 +13,29 @@ func (fn OptionFunc) apply(c *Loader) {
 }
 
 // SetLogger sets gofig's logger.
-func SetLogger(l Logger) Option {
-	return OptionFunc(func(c *Loader) {
-		c.logger = l
+func SetLogger(v Logger) Option {
+	return OptionFunc(func(l *Loader) {
+		l.logger = v
 	})
 }
 
 // SetKeyFormatter sets the formatter to be used for recieved keys from parsers.
 func SetKeyFormatter(fmtr Formatter) Option {
-	return OptionFunc(func(c *Loader) {
-		c.kfmtr = KeyFormatter(fmtr)
+	return OptionFunc(func(l *Loader) {
+		l.keyFormatter = KeyFormatter(fmtr)
+	})
+}
+
+// SetStructTag changes the struct tag gofig looks for on struct fields to the value provided.
+func SetStructTag(t string) Option {
+	return OptionFunc(func(l *Loader) {
+		l.structTag = t
 	})
 }
 
 // WithDebug enables debugging. Use SetLogger to customise the logging output.
 func WithDebug() Option {
-	return OptionFunc(func(c *Loader) {
-		c.debug = true
+	return OptionFunc(func(l *Loader) {
+		l.debug = true
 	})
 }

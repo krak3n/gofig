@@ -12,10 +12,14 @@ const (
 
 // Loader parses configuration from one or more sources.
 type Loader struct {
-	logger Logger
-	debug  bool
+	// flattened map of field keys to struct reflect values
 	fields Fields
-	kfmtr  Formatter
+
+	// Configurable options
+	logger       Logger
+	debug        bool
+	keyFormatter Formatter
+	structTag    string
 }
 
 // New constructs a new Loader
@@ -32,9 +36,10 @@ func New(dst interface{}, opts ...Option) (*Loader, error) {
 	}
 
 	c := &Loader{
-		logger: DefaultLogger(),
-		fields: make(Fields),
-		kfmtr:  KeyFormatter(LowerCaseFormatter()),
+		logger:       DefaultLogger(),
+		fields:       make(Fields),
+		keyFormatter: KeyFormatter(LowerCaseFormatter()),
+		structTag:    DefaultStructTag,
 	}
 
 	for _, opt := range opts {
@@ -81,7 +86,7 @@ func (c *Loader) parse(p Parser) error {
 
 		// Call the function passed on the channel returning key value pair
 		key, val := fn()
-		key = c.kfmtr.Format(key)
+		key = c.keyFormatter.Format(key)
 
 		// Lookup the key
 		field, ok := c.fields[key]
@@ -114,9 +119,9 @@ func (c *Loader) flatten(rv reflect.Value, rt reflect.Type, key string) {
 		ft := rt.Field(i)
 
 		if fv.CanSet() {
-			tag := TagFromStructField(ft, DefaultStructTag)
+			tag := TagFromStructField(ft, c.structTag)
 
-			path := c.kfmtr.Format(strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), "."))
+			path := c.keyFormatter.Format(strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), "."))
 
 			c.log().Printf("<Field %s kind:%s path:%s tag:%s>", ft.Name, fv.Kind(), path, tag)
 
