@@ -16,11 +16,12 @@ decoupled API for all your configuration loading needs.
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"go.krak3n.codes/gofig"
 	"go.krak3n.codes/gofig/parsers/env"
 	"go.krak3n.codes/gofig/parsers/yaml"
+	"go.krak3n.codes/gofig/notifiers/fsnotify"
 )
 
 type Config  struct {
@@ -39,13 +40,24 @@ func main() {
 	gfg, err := gofig.New(&cfg)
 	gofig.Must(err)
 
-	// Parse the yaml file and then the envs
-	gofig.Must(gfg.Parse(
-		gofig.FromFile(yaml.New(), "./config.yaml"),
-		env.New(env.HasAndTrimPrefix("GOFIG")),
-	))
+	// Setsup a yaml parser with file notification support
+	yml := gofig.FromFileWithNotify(yaml.New(), fsnotify.New("./config.yaml"))
 
-	fmt.Println(fmt.Sprintf("%+v", cfg))
+	// Setup a notification channel to send notification of configuration updates
+	notifyCh := make(chan error, 1)
+	gfg.Notify(notifyCh, yml)
+
+	// Parse the yaml file and then environment variables
+	gofig.Must(gfg.Parse(yml, env.New(env.HasAndTrimPrefix("GOFIG"))))
+
+	// Watch for configuration changes to reload your application
+	for {
+		log.Printf("configuration: %+v\n", cfg)
+
+		if err := <- notifyCh; err != nil {
+			log.Fatal(err) // Failed to read or parse the configuration change
+		}
+	}
 }
 ```
 
@@ -60,16 +72,16 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 
 # Roadmap
 
-* Test Suite / Code Coverage reporting
-* Helpful errors
-* Support pointer values
-* Default Values via a struct tag, e.g: `gofig:"foo,default=bar"`
-* Support `omitempty` for pointer values which should not be initialised to their zero value.
-* Support notification of config changes via `Notifier` interface
-* Implement File notifier on changes to files via `fsnotify`
-* Add support for:
-  * ETCD Parser / Notifier
-  * Consul Parser / Notifier
+* [ ] Test Suite / Code Coverage reporting
+* [ ] Helpful errors
+* [ ] Support pointer values
+* [ ] Default Values via a struct tag, e.g: `gofig:"foo,default=bar"`
+* [ ] Support `omitempty` for pointer values which should not be initialised to their zero value.
+* [ ] Support notification of config changes via `Notifier` interface
+* [x] Implement File notifier on changes to files via `fsnotify`
+* [ ] Add support for:
+  * [ ] ETCD Parser / Notifier
+  * [ ] Consul Parser / Notifier
 
 [workflow-image]: https://img.shields.io/github/workflow/status/krak3n/gofig/GoFig?style=flat&logo=github&logoColor=white&label=Workflow
 [workflow-url]: https://github.com/krak3n/gofig/actions?query=workflow%3AGoFig

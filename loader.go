@@ -35,7 +35,7 @@ func New(dst interface{}, opts ...Option) (*Loader, error) {
 		return nil, ErrInvalidValue{reflect.TypeOf(v)}
 	}
 
-	c := &Loader{
+	l := &Loader{
 		logger:       DefaultLogger(),
 		fields:       make(Fields),
 		keyFormatter: KeyFormatter(LowerCaseFormatter()),
@@ -43,18 +43,18 @@ func New(dst interface{}, opts ...Option) (*Loader, error) {
 	}
 
 	for _, opt := range opts {
-		opt.apply(c)
+		opt.apply(l)
 	}
 
-	c.flatten(v.Elem(), t.Elem(), "")
+	l.flatten(v.Elem(), t.Elem(), "")
 
-	return c, nil
+	return l, nil
 }
 
 // Parse parses the given parsers in order. If any one parser fails an error will be returned.
-func (c *Loader) Parse(parsers ...Parser) error {
+func (l *Loader) Parse(parsers ...Parser) error {
 	for _, p := range parsers {
-		if err := c.parse(p); err != nil {
+		if err := l.parse(p); err != nil {
 			return err
 		}
 	}
@@ -63,16 +63,16 @@ func (c *Loader) Parse(parsers ...Parser) error {
 }
 
 // log returns a logger if debug is true
-func (c *Loader) log() Logger {
-	if c.debug {
-		return c.logger
+func (l *Loader) log() Logger {
+	if l.debug {
+		return l.logger
 	}
 
 	return NopLogger()
 }
 
 // parse parses an single parser.
-func (c *Loader) parse(p Parser) error {
+func (l *Loader) parse(p Parser) error {
 	ch, err := p.Values()
 	if err != nil {
 		return err
@@ -86,20 +86,20 @@ func (c *Loader) parse(p Parser) error {
 
 		// Call the function passed on the channel returning key value pair
 		key, val := fn()
-		key = c.keyFormatter.Format(key)
+		key = l.keyFormatter.Format(key)
 
 		// Lookup the key
-		field, ok := c.fields[key]
+		field, ok := l.fields[key]
 		if !ok {
 			// If the field was not found this could be a map element value.
 			// This will always be the leaf node.
-			if field, ok = c.mapRoot(key); ok {
+			if field, ok = l.mapRoot(key); ok {
 				key = strings.Trim(strings.Replace(key, field.Key, "", -1), ".")
 				if err := setMap(field, key, val); err != nil {
 					return err
 				}
 			} else {
-				c.log().Printf("%s key not found", key)
+				l.log().Printf("%s key not found", key)
 			}
 
 			continue
@@ -113,30 +113,30 @@ func (c *Loader) parse(p Parser) error {
 }
 
 // flatten recursively flattens a struct.
-func (c *Loader) flatten(rv reflect.Value, rt reflect.Type, key string) {
+func (l *Loader) flatten(rv reflect.Value, rt reflect.Type, key string) {
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Field(i)
 		ft := rt.Field(i)
 
 		if fv.CanSet() {
-			tag := TagFromStructField(ft, c.structTag)
+			tag := TagFromStructField(ft, l.structTag)
 
-			path := c.keyFormatter.Format(strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), "."))
+			path := l.keyFormatter.Format(strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), "."))
 
-			c.log().Printf("<Field %s kind:%s path:%s tag:%s>", ft.Name, fv.Kind(), path, tag)
+			l.log().Printf("<Field %s kind:%s path:%s tag:%s>", ft.Name, fv.Kind(), path, tag)
 
 			switch fv.Kind() {
 			case reflect.Struct:
-				c.flatten(fv, ft.Type, path)
+				l.flatten(fv, ft.Type, path)
 			default:
-				c.fields.Set(path, Field{path, fv})
+				l.fields.Set(path, Field{path, fv})
 			}
 		}
 	}
 }
 
 // mapRoot recursively looks for a root map for the given key.
-func (c *Loader) mapRoot(key string) (Field, bool) {
+func (l *Loader) mapRoot(key string) (Field, bool) {
 	var f Field
 
 	elms := strings.Split(key, ".")
@@ -146,9 +146,9 @@ func (c *Loader) mapRoot(key string) (Field, bool) {
 		return f, false
 	}
 
-	field, ok := c.fields[key]
+	field, ok := l.fields[key]
 	if !ok {
-		return c.mapRoot(key)
+		return l.mapRoot(key)
 	}
 
 	if field.Value.Kind() != reflect.Map {
