@@ -17,14 +17,18 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"go.krak3n.codes/gofig"
+	"go.krak3n.codes/gofig/notifiers/fsnotify"
 	"go.krak3n.codes/gofig/parsers/env"
 	"go.krak3n.codes/gofig/parsers/yaml"
-	"go.krak3n.codes/gofig/notifiers/fsnotify"
 )
 
-type Config  struct {
+// Config is our configuration structure.
+type Config struct {
 	Foo struct {
 		Bar string `gofig:"bar"`
 	} `gofig:"foo"`
@@ -43,21 +47,36 @@ func main() {
 	// Setsup a yaml parser with file notification support
 	yml := gofig.FromFileWithNotify(yaml.New(), fsnotify.New("./config.yaml"))
 
-	// Setup a notification channel to send notification of configuration updates
-	notifyCh := make(chan error, 1)
-	gfg.Notify(notifyCh, yml)
-
 	// Parse the yaml file and then environment variables
 	gofig.Must(gfg.Parse(yml, env.New(env.HasAndTrimPrefix("GOFIG"))))
 
-	// Watch for configuration changes to reload your application
+	// Setup gofig notification channel to send notification of configuration updates
+	notifyCh := make(chan error, 1)
+	gfg.Notify(notifyCh, yml)
+
+	// Setup OS signal notification
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
+
+	// Wait for OS signal or configuration changes to reload your application
 	for {
 		log.Printf("configuration: %+v\n", cfg)
 
-		if err := <- notifyCh; err != nil {
-			log.Fatal(err) // Failed to read or parse the configuration change
+		select {
+		case err := <-notifyCh:
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		case sig := <-signalCh:
+			log.Println(sig)
+			return
 		}
 	}
+
+	// Check close errors.
+	// You only need to call Close if using gofig.Notify or gofig.NotifyWithContext.
+	gofig.Must(gfg.Close())
 }
 ```
 
@@ -77,8 +96,8 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 * [ ] Support pointer values
 * [ ] Default Values via a struct tag, e.g: `gofig:"foo,default=bar"`
 * [ ] Support `omitempty` for pointer values which should not be initialised to their zero value.
-* [ ] Support notification of config changes via `Notifier` interface
-* [x] Implement File notifier on changes to files via `fsnotify`
+* [x] (PoC) Support notification of config changes via `Notifier` interface
+* [x] (PoC) Implement File notifier on changes to files via `fsnotify`
 * [ ] Add support for:
   * [ ] ETCD Parser / Notifier
   * [ ] Consul Parser / Notifier

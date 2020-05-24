@@ -3,6 +3,7 @@ package gofig
 import (
 	"reflect"
 	"strings"
+	"sync"
 )
 
 // Gofig default configuration.
@@ -14,6 +15,10 @@ const (
 type Loader struct {
 	// flattened map of field keys to struct reflect values
 	fields Fields
+
+	// notifiers we are currently watching
+	notifiers []NotifyParser
+	wg        sync.WaitGroup
 
 	// Configurable options
 	logger       Logger
@@ -36,8 +41,11 @@ func New(dst interface{}, opts ...Option) (*Loader, error) {
 	}
 
 	l := &Loader{
+		fields:    make(Fields),
+		notifiers: make([]NotifyParser, 0),
+
+		// Defaults
 		logger:       DefaultLogger(),
-		fields:       make(Fields),
 		keyFormatter: KeyFormatter(LowerCaseFormatter()),
 		structTag:    DefaultStructTag,
 	}

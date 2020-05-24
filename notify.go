@@ -6,6 +6,7 @@ import "context"
 // Remember to check the error on the channel.
 type Notifier interface {
 	Notify() <-chan error
+	Close() error
 }
 
 // A FileNotifier is a Notifier that also returns the path to the file being watched.
@@ -28,14 +29,23 @@ func (l *Loader) Notify(c chan<- error, notifiers ...NotifyParser) {
 
 // NotifyWithContext notifies when a change to configuration has occurred.
 func (l *Loader) NotifyWithContext(ctx context.Context, c chan<- error, notifiers ...NotifyParser) {
+	l.notifiers = append(l.notifiers, notifiers...)
+	l.wg.Add(len(notifiers))
+
 	for _, n := range notifiers {
 		go func(n NotifyParser) {
+			defer l.wg.Done()
+
 			ch := n.Notify()
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case err := <-ch:
+				case err, ok := <-ch:
+					if !ok {
+						return // Channel is closed
+					}
+
 					if err == nil {
 						err = l.Parse(n)
 					}
@@ -45,6 +55,22 @@ func (l *Loader) NotifyWithContext(ctx context.Context, c chan<- error, notifier
 			}
 		}(n)
 	}
+}
+
+// Close stops listening for notification events. This only needs to be called if Notify or
+// NotifyWithContext are being used.
+func (l *Loader) Close() error {
+	var err CloseError
+
+	for _, n := range l.notifiers {
+		if e := n.Close(); e != nil {
+			err.Add(e)
+		}
+	}
+
+	l.wg.Wait()
+
+	return err.NilOrError()
 }
 
 // ParseNotifierFunc implements the Notifier and Parser interface.
@@ -62,6 +88,13 @@ func (fn ParseNotifierFunc) Notify() <-chan error {
 	_, n := fn()
 
 	return n.Notify()
+}
+
+// Close calls the wrapped function returning the values from the returned Notifier Close method.
+func (fn ParseNotifierFunc) Close() error {
+	_, n := fn()
+
+	return n.Close()
 }
 
 // FromFileWithNotify reads a file anf notifies of changes.
