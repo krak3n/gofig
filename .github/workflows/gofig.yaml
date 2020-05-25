@@ -19,6 +19,6 @@ jobs:
       run: go test -race -coverprofile=coverage.out -covermode=atomic
     - name: Upload Coverage
       uses: codecov/codecov-action@v1.0.7
-        with:
-          file: ./coverage.out
-          fail_ci_if_error: true
+      with:
+        file: ./coverage.out
+        fail_ci_if_error: true
