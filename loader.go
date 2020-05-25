@@ -125,6 +125,7 @@ func (l *Loader) parse(p Parser) error {
 		field, ok := l.find(key)
 		if ok {
 			if field.Value.Kind() == reflect.Map {
+				key = strings.Trim(strings.Replace(key, field.Key, "", -1), ".")
 				if err := setMap(field, key, val); err != nil {
 					return err
 				}
@@ -151,7 +152,7 @@ func (l *Loader) flatten(rv reflect.Value, rt reflect.Type, key string) {
 		if fv.CanSet() {
 			tag := TagFromStructField(ft, l.structTag)
 
-			k := strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), ".")
+			k := l.keyFormatter.Format(strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), "."))
 
 			l.log().Printf("<Field %s kind:%s key:%s tag:%s>", ft.Name, fv.Kind(), k, tag)
 

@@ -10,8 +10,12 @@ import (
 
 // A Parser parses configuration.
 type Parser interface {
-	// Keys sends the keys the parser should be looking for.
-	// TODO: better explain this
+	// Keys sends flattened keys (e.g foo.bar.fizz_buzz) to the parser. The Parser then can then decide, if
+	// it wishes to format the key and store internal mapping or not.
+	// This is useful for parsers like environment variables where keys such as foo.bar.fizz_buzz would need to be
+	// converted too FOO_BAR_FIZZ_BUZZ with a mapping to the original key.
+	// This allows us to  maintain case sensitity in key lookups within the laoder.
+	// Most parsers such as YAML, TOML and JSON will not process these keys.
 	Keys(keys <-chan string) error
 
 	// Values returns a channel of functions that returns an individual key value pair.
@@ -71,6 +75,16 @@ func (p *InMemoryParser) Add(k string, v interface{}) {
 // Delete deletes a value.
 func (p *InMemoryParser) Delete(k string) {
 	delete(p.values, k)
+}
+
+// Keys consumes the keys but does nothing with them.
+func (p *InMemoryParser) Keys(c <-chan string) error {
+	for {
+		_, ok := <-c
+		if !ok {
+			return nil
+		}
+	}
 }
 
 // Values iterates over the in memory values returning then on the returned channel.

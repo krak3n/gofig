@@ -137,7 +137,7 @@ func TestParse(t *testing.T) {
 			}
 
 			if !cmp.Equal(tc.want, cfg) {
-				t.Errorf("want %+v, got %+v", tc.want, cfg)
+				t.Errorf("\nwant: %+v\ngot:  %+v", tc.want, cfg)
 			}
 		})
 	}
@@ -158,10 +158,28 @@ func TestKeyFormatting(t *testing.T) {
 		opts   []Option
 		want   Config
 	}{
-		"ParseUpperToLower": {
+		"CaseSensitive": {
 			parser: func() *InMemoryParser {
 				p := NewInMemoryParser()
-				p.Add("FOO", "bar")
+				p.Add("foo", "bar")
+				p.Add("FIZZ.BUZZ", "baz")
+
+				return p
+			}(),
+			want: Config{
+				Foo: "bar",
+				Fizz: Fizz{
+					Buzz: "",
+				},
+			},
+		},
+		"CaseInsensitive": {
+			opts: []Option{
+				SetKeyFormatter(CaseInsensitiveKeys()),
+			},
+			parser: func() *InMemoryParser {
+				p := NewInMemoryParser()
+				p.Add("foo", "bar")
 				p.Add("FIZZ.BUZZ", "baz")
 
 				return p
