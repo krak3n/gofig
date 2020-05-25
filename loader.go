@@ -25,6 +25,7 @@ type Loader struct {
 	debug        bool
 	keyFormatter Formatter
 	structTag    string
+	delimiter    string
 }
 
 // New constructs a new Loader
@@ -50,6 +51,7 @@ func New(dst interface{}, opts ...Option) (*Loader, error) {
 			return key
 		})),
 		structTag: DefaultStructTag,
+		delimiter: ".",
 	}
 
 	for _, opt := range opts {
@@ -83,6 +85,9 @@ func (l *Loader) log() Logger {
 
 // parse parses an single parser.
 func (l *Loader) parse(p Parser) error {
+	// Set the delimiter
+	p.SetDelimeter(l.delimiter)
+
 	// Send the keys
 	errCh := make(chan error, 1)
 	keyCh := make(chan string, len(l.fields))
@@ -125,8 +130,8 @@ func (l *Loader) parse(p Parser) error {
 		field, ok := l.find(key)
 		if ok {
 			if field.Value.Kind() == reflect.Map {
-				key = strings.Trim(strings.Replace(key, field.Key, "", -1), ".")
-				if err := setMap(field, key, val); err != nil {
+				key = strings.Trim(strings.Replace(key, field.Key, "", -1), l.delimiter)
+				if err := setMap(field, key, val, l.delimiter); err != nil {
 					return err
 				}
 
@@ -152,7 +157,11 @@ func (l *Loader) flatten(rv reflect.Value, rt reflect.Type, key string) {
 		if fv.CanSet() {
 			tag := TagFromStructField(ft, l.structTag)
 
-			k := l.keyFormatter.Format(strings.Trim(strings.Join(append(strings.Split(key, "."), tag.Name), "."), "."))
+			k := l.keyFormatter.Format(
+				strings.Trim(
+					strings.Join(
+						append(strings.Split(key, l.delimiter), tag.Name), l.delimiter),
+					l.delimiter))
 
 			l.log().Printf("<Field %s kind:%s key:%s tag:%s>", ft.Name, fv.Kind(), k, tag)
 
@@ -172,9 +181,9 @@ func (l *Loader) find(key string) (Field, bool) {
 		return f, ok
 	}
 
-	elms := strings.Split(key, ".")
+	elms := strings.Split(key, l.delimiter)
 
-	key = strings.Join(elms[:len(elms)-1], ".")
+	key = strings.Join(elms[:len(elms)-1], l.delimiter)
 	if key == "" {
 		return f, false
 	}

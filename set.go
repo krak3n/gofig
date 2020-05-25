@@ -177,7 +177,7 @@ func setSlice(field Field, value interface{}) error {
 }
 
 // setMap sets a field to a map, also handles nested maps.
-func setMap(field Field, key string, value interface{}) error {
+func setMap(field Field, key string, value interface{}, delimiter string) error {
 	if field.Value.IsNil() {
 		if field.Value.Type().Key().Kind() != reflect.String {
 			return ErrInvalidValue{
@@ -192,10 +192,10 @@ func setMap(field Field, key string, value interface{}) error {
 
 	// Nested map
 	if field.Value.Type().Elem().Kind() == reflect.Map {
-		elms := strings.Split(key, ".")
+		elms := strings.Split(key, delimiter)
 
 		parent, children := elms[0], elms[1:]
-		key = strings.Join(children, ".")
+		key = strings.Join(children, delimiter)
 		if key == "" {
 			return nil
 		}
@@ -205,7 +205,7 @@ func setMap(field Field, key string, value interface{}) error {
 			m = reflect.New(field.Value.Type().Elem()).Elem()
 		}
 
-		if err := setMap(Field{key, m}, key, value); err != nil {
+		if err := setMap(Field{key, m}, key, value, delimiter); err != nil {
 			return err
 		}
 

@@ -10,15 +10,21 @@ type Parser struct {
 	prefix string
 	suffix string
 
-	keys map[string]string
+	delimiter string
+	keys      map[string]string
+}
+
+// SetDelimeter sets the key delimiter.
+func (p *Parser) SetDelimeter(v string) {
+	p.delimiter = v
 }
 
 // Keys consumes the keys from the channel.
 func (p *Parser) Keys(c <-chan string) error {
-	// Range over the keys we need to look for and convert to env vars formats.
+	// Range over the keys we need to look for and convert to env variables formats.
 	for key := range c {
 		// Break the key at the . delimiter
-		elms := strings.Split(key, ".")
+		elms := strings.Split(key, p.delimiter)
 
 		// Add prefix / suffix
 		elms = append([]string{p.prefix}, elms...)

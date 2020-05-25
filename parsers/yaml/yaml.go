@@ -9,11 +9,20 @@ import (
 )
 
 // Parser parses YAML documents.
-type Parser struct{}
+type Parser struct {
+	delimiter string
+}
 
 // New constructs a new Parser.
 func New() *Parser {
-	return &Parser{}
+	return &Parser{
+		delimiter: ".",
+	}
+}
+
+// SetDelimeter sets the key delimiter.
+func (p *Parser) SetDelimeter(v string) {
+	p.delimiter = v
 }
 
 // Values parses yaml configuration, iterating over each key value pair and returning them until
@@ -30,18 +39,18 @@ func (p *Parser) Values(src io.ReadCloser) (<-chan func() (string, interface{}),
 
 	go func() {
 		defer close(ch)
-		recurse("", dst, ch)
+		p.recurse("", dst, ch)
 	}()
 
 	return ch, src.Close()
 }
 
-func recurse(key string, m map[string]interface{}, ch chan func() (string, interface{})) {
+func (p *Parser) recurse(key string, m map[string]interface{}, ch chan func() (string, interface{})) {
 	for k, v := range m {
-		name := strings.Trim(strings.Join(append(strings.Split(key, "."), k), "."), ".")
+		name := strings.Trim(strings.Join(append(strings.Split(key, p.delimiter), k), p.delimiter), p.delimiter)
 
 		if reflect.ValueOf(v).Kind() == reflect.Map {
-			recurse(name, v.(map[string]interface{}), ch)
+			p.recurse(name, v.(map[string]interface{}), ch)
 
 			continue
 		}

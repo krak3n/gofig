@@ -41,14 +41,14 @@ func main() {
 	var cfg Config
 
 	// Initialise gofig with the destination struct
-	gfg, err := gofig.New(&cfg)
+	gfg, err := gofig.New(&cfg, gofig.WithDebug())
 	gofig.Must(err)
 
 	// Setsup a yaml parser with file notification support
-	yml := gofig.FromFileWithNotify(yaml.New(), fsnotify.New("./config.yaml"))
+	yml := gofig.FromFileAndNotify(yaml.New(), fsnotify.New("./config.yaml"))
 
 	// Parse the yaml file and then environment variables
-	gofig.Must(gfg.Parse(yml, env.New(env.HasAndTrimPrefix("GOFIG"))))
+	gofig.Must(gfg.Parse(yml, env.New(env.WithPrefix("GOFIG"))))
 
 	// Setup gofig notification channel to send notification of configuration updates
 	notifyCh := make(chan error, 1)
@@ -91,13 +91,14 @@ GoFig implements it's parsers as sub modules. Currently it supports:
 
 # Roadmap
 
+* [x] (PoC) Support notification of config changes via `Notifier` interface
+* [x] (PoC) Implement File notifier on changes to files via `fsnotify`
+* [ ] Parser Order Priority on Notify events, e.g file changes should not override env var config
 * [ ] Test Suite / Code Coverage reporting
 * [ ] Helpful errors
 * [ ] Support pointer values
 * [ ] Default Values via a struct tag, e.g: `gofig:"foo,default=bar"`
 * [ ] Support `omitempty` for pointer values which should not be initialised to their zero value.
-* [x] (PoC) Support notification of config changes via `Notifier` interface
-* [x] (PoC) Implement File notifier on changes to files via `fsnotify`
 * [ ] Add support for:
   * [ ] ETCD Parser / Notifier
   * [ ] Consul Parser / Notifier

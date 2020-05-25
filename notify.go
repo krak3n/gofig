@@ -73,43 +73,33 @@ func (l *Loader) Close() error {
 	return err.NilOrError()
 }
 
-// ParseNotifierFunc implements the Notifier and Parser interface.
-type ParseNotifierFunc func() (Parser, Notifier)
+// FileNotifyParser parses and watches for notifications from a notifier.
+type FileNotifyParser struct {
+	*FileParser
 
-// Keys consumes the keys but does nothing with them.
-func (fn ParseNotifierFunc) Keys(c <-chan string) error {
-	for {
-		_, ok := <-c
-		if !ok {
-			return nil
-		}
+	notifier FileNotifier
+}
+
+// NewFileNotifyParser constructs a new FileNotifyParser.
+func NewFileNotifyParser(parser ParseReadCloser, notifier FileNotifier) *FileNotifyParser {
+	return &FileNotifyParser{
+		FileParser: NewFileParser(parser, notifier.Path()),
+
+		notifier: notifier,
 	}
 }
 
-// Values calls the wrapped function returning the values from the returned Parser Values method.
-func (fn ParseNotifierFunc) Values() (<-chan func() (string, interface{}), error) {
-	p, _ := fn()
-
-	return p.Values()
-}
-
 // Notify calls the wrapped function returning the values from the returned Notifier Notify method.
-func (fn ParseNotifierFunc) Notify() <-chan error {
-	_, n := fn()
-
-	return n.Notify()
+func (p *FileNotifyParser) Notify() <-chan error {
+	return p.notifier.Notify()
 }
 
 // Close calls the wrapped function returning the values from the returned Notifier Close method.
-func (fn ParseNotifierFunc) Close() error {
-	_, n := fn()
-
-	return n.Close()
+func (p *FileNotifyParser) Close() error {
+	return p.notifier.Close()
 }
 
-// FromFileWithNotify reads a file anf notifies of changes.
-func FromFileWithNotify(parser ReaderParser, notifier FileNotifier) NotifyParser {
-	return ParseNotifierFunc(func() (Parser, Notifier) {
-		return FromFile(parser, notifier.Path()), notifier
-	})
+// FromFileAndNotify reads a file anf notifies of changes.
+func FromFileAndNotify(parser ParseReadCloser, notifier FileNotifier) NotifyParser {
+	return NewFileNotifyParser(parser, notifier)
 }

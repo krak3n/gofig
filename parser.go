@@ -8,13 +8,20 @@ import (
 	"strings"
 )
 
+// A DelimeterSetter sets the key delimeter used for flattened keys, default is .
+type DelimeterSetter interface {
+	SetDelimeter(string)
+}
+
 // A Parser parses configuration.
 type Parser interface {
+	DelimeterSetter
+
 	// Keys sends flattened keys (e.g foo.bar.fizz_buzz) to the parser. The Parser then can then decide, if
 	// it wishes to format the key and store internal mapping or not.
 	// This is useful for parsers like environment variables where keys such as foo.bar.fizz_buzz would need to be
 	// converted too FOO_BAR_FIZZ_BUZZ with a mapping to the original key.
-	// This allows us to  maintain case sensitity in key lookups within the laoder.
+	// This allows us to  maintain case sensitivity in key lookups within the loader.
 	// Most parsers such as YAML, TOML and JSON will not process these keys.
 	Keys(keys <-chan string) error
 
@@ -39,32 +46,23 @@ type Parser interface {
 	Values() (<-chan func() (key string, value interface{}), error)
 }
 
-// A ParserFunc is an adapter allowing regular methods to act as Parser's.
-type ParserFunc func() (<-chan func() (key string, value interface{}), error)
+// A ParseReadCloser parses configuration from an io.ReadCloser.
+type ParseReadCloser interface {
+	DelimeterSetter
 
-// Keys consumes the keys but does nothing with them.
-func (fn ParserFunc) Keys(c <-chan string) error {
-	for {
-		_, ok := <-c
-		if !ok {
-			return nil
-		}
-	}
-}
-
-// Values calls the wrapped fn returning it's values.
-func (fn ParserFunc) Values() (<-chan func() (string, interface{}), error) {
-	return fn()
-}
-
-// A ReaderParser parses configuration from an io.Reader.
-type ReaderParser interface {
 	Values(src io.ReadCloser) (<-chan func() (key string, value interface{}), error)
 }
 
 // An InMemoryParser holds key value pairs in memory implementing the Parser interface.
 type InMemoryParser struct {
 	values map[string]interface{}
+}
+
+// NewInMemoryParser constructs a new InMemoryParser.
+func NewInMemoryParser() *InMemoryParser {
+	return &InMemoryParser{
+		values: make(map[string]interface{}),
+	}
 }
 
 // Add adds a value to the in memory values.
@@ -76,6 +74,9 @@ func (p *InMemoryParser) Add(k string, v interface{}) {
 func (p *InMemoryParser) Delete(k string) {
 	delete(p.values, k)
 }
+
+// SetDelimeter is a no-op.
+func (p *InMemoryParser) SetDelimeter(string) {}
 
 // Keys consumes the keys but does nothing with them.
 func (p *InMemoryParser) Keys(c <-chan string) error {
@@ -106,35 +107,90 @@ func (p *InMemoryParser) Values() (<-chan func() (string, interface{}), error) {
 	return ch, nil
 }
 
-// NewInMemoryParser constructs a new InMemoryParser.
-func NewInMemoryParser() *InMemoryParser {
-	return &InMemoryParser{
-		values: make(map[string]interface{}),
+// ReadCloseParser parses config from io.ReadCloser's.
+type ReadCloseParser struct {
+	parser ParseReadCloser
+	src    io.ReadCloser
+}
+
+// NewReadCloseParser constructs a new ReadCloseParser.
+func NewReadCloseParser(parser ParseReadCloser, src io.ReadCloser) *ReadCloseParser {
+	return &ReadCloseParser{
+		parser: parser,
+		src:    src,
 	}
 }
 
+// SetDelimeter sets the parsers delimeter.
+func (p *ReadCloseParser) SetDelimeter(d string) {
+	p.parser.SetDelimeter(d)
+}
+
+// Keys is a no-op key consumer.
+func (p *ReadCloseParser) Keys(c <-chan string) error {
+	for {
+		_, ok := <-c
+		if !ok {
+			return nil
+		}
+	}
+}
+
+// Values returns values from the parser back to gofig.
+func (p *ReadCloseParser) Values() (<-chan func() (string, interface{}), error) {
+	return p.parser.Values(p.src)
+}
+
 // FromString parsers configuration from a string.
-func FromString(parser ReaderParser, v string) Parser {
-	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
-		return parser.Values(ioutil.NopCloser(strings.NewReader(v)))
-	})
+func FromString(parser ParseReadCloser, v string) Parser {
+	return NewReadCloseParser(parser, ioutil.NopCloser(strings.NewReader(v)))
 }
 
 // FromBytes parsers configuration from a byte slice.
-func FromBytes(parser ReaderParser, b []byte) Parser {
-	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
-		return parser.Values(ioutil.NopCloser(bytes.NewReader(b)))
-	})
+func FromBytes(parser ParseReadCloser, b []byte) Parser {
+	return NewReadCloseParser(parser, ioutil.NopCloser(bytes.NewReader(b)))
+}
+
+// FileParser parsers configuration from a file.
+type FileParser struct {
+	parser ParseReadCloser
+	path   string
+}
+
+// NewFileParser constructs a new FileParser.
+func NewFileParser(parser ParseReadCloser, path string) *FileParser {
+	return &FileParser{
+		parser: parser,
+		path:   path,
+	}
+}
+
+// SetDelimeter sets the parsers delimeter.
+func (p *FileParser) SetDelimeter(d string) {
+	p.parser.SetDelimeter(d)
+}
+
+// Keys is a no-op key consumer.
+func (p *FileParser) Keys(c <-chan string) error {
+	for {
+		_, ok := <-c
+		if !ok {
+			return nil
+		}
+	}
+}
+
+// Values opens the file for reading and passed it to the parser to return values back to gofig.
+func (p *FileParser) Values() (<-chan func() (string, interface{}), error) {
+	f, err := os.Open(p.path)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.parser.Values(f)
 }
 
 // FromFile reads a file.
-func FromFile(parser ReaderParser, path string) Parser {
-	return ParserFunc(func() (<-chan func() (string, interface{}), error) {
-		f, err := os.Open(path)
-		if err != nil {
-			return nil, err
-		}
-
-		return parser.Values(f)
-	})
+func FromFile(parser ParseReadCloser, path string) Parser {
+	return NewFileParser(parser, path)
 }
