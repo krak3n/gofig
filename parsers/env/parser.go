@@ -1,7 +1,6 @@
 package env
 
 import (
-	"fmt"
 	"os"
 	"strings"
 )
@@ -27,8 +26,6 @@ func (p *Parser) Keys(c <-chan string) error {
 
 		// Join the elements elms together at _
 		env := strings.Trim(strings.ToUpper(strings.Join(elms, "_")), "_")
-
-		fmt.Println(key, env)
 
 		// Store the env var to key mapping
 		p.keys[env] = key
