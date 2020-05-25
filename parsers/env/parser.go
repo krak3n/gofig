@@ -1,14 +1,40 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
 
 // Parser parsers OS environment variables.
 type Parser struct {
-	filter    Filterer
-	formatter Formatter
+	prefix string
+	suffix string
+
+	keys map[string]string
+}
+
+// Keys consumes the keys from the channel.
+func (p *Parser) Keys(c <-chan string) error {
+	// Range over the keys we need to look for and convert to env vars formats.
+	for key := range c {
+		// Break the key at the . delimiter
+		elms := strings.Split(key, ".")
+
+		// Add prefix / suffix
+		elms = append([]string{p.prefix}, elms...)
+		elms = append(elms, p.suffix)
+
+		// Join the elements elms together at _
+		env := strings.Trim(strings.ToUpper(strings.Join(elms, "_")), "_")
+
+		fmt.Println(key, env)
+
+		// Store the env var to key mapping
+		p.keys[env] = key
+	}
+
+	return nil
 }
 
 // Values returns a channel of funcs that return each environment variable key values.
@@ -19,21 +45,18 @@ func (p *Parser) Values() (<-chan func() (string, interface{}), error) {
 		defer close(ch)
 
 		for _, env := range os.Environ() {
-			key, val := split(env)
+			// Split the environment variable at =
+			name, val := split(env)
 
-			if p.filter.Filter(key, val) {
-				continue
+			// Lookup the key, if found, send the key and the value
+			key, ok := p.keys[name]
+			if ok {
+				ch <- (func(key string, val interface{}) func() (string, interface{}) {
+					return func() (string, interface{}) {
+						return key, val
+					}
+				}(key, val))
 			}
-
-			key = p.formatter.Format(key)
-
-			key = strings.Join(strings.Split(key, "_"), ".")
-
-			ch <- (func(key string, val interface{}) func() (string, interface{}) {
-				return func() (string, interface{}) {
-					return key, val
-				}
-			}(key, val))
 		}
 	}()
 

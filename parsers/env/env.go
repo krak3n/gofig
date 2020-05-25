@@ -4,8 +4,7 @@ package env
 // Use Option methods to configure the parsers behaviour.
 func New(opts ...Option) *Parser {
 	p := &Parser{
-		filter:    EmptyFilter(),
-		formatter: NopFormatter(),
+		keys: map[string]string{},
 	}
 
 	for _, opt := range opts {

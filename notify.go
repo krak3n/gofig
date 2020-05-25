@@ -76,6 +76,16 @@ func (l *Loader) Close() error {
 // ParseNotifierFunc implements the Notifier and Parser interface.
 type ParseNotifierFunc func() (Parser, Notifier)
 
+// Keys consumes the keys but does nothing with them.
+func (fn ParseNotifierFunc) Keys(c <-chan string) error {
+	for {
+		_, ok := <-c
+		if !ok {
+			return nil
+		}
+	}
+}
+
 // Values calls the wrapped function returning the values from the returned Parser Values method.
 func (fn ParseNotifierFunc) Values() (<-chan func() (string, interface{}), error) {
 	p, _ := fn()

@@ -10,6 +10,10 @@ import (
 
 // A Parser parses configuration.
 type Parser interface {
+	// Keys sends the keys the parser should be looking for.
+	// TODO: better explain this
+	Keys(keys <-chan string) error
+
 	// Values returns a channel of functions that returns an individual key value pair.
 	// Each key returned should be an absolute flattened path and the value being the keys value.
 	// The Parser should close the channel once parsing the configuration is complete and no more
@@ -33,6 +37,16 @@ type Parser interface {
 
 // A ParserFunc is an adapter allowing regular methods to act as Parser's.
 type ParserFunc func() (<-chan func() (key string, value interface{}), error)
+
+// Keys consumes the keys but does nothing with them.
+func (fn ParserFunc) Keys(c <-chan string) error {
+	for {
+		_, ok := <-c
+		if !ok {
+			return nil
+		}
+	}
+}
 
 // Values calls the wrapped fn returning it's values.
 func (fn ParserFunc) Values() (<-chan func() (string, interface{}), error) {

@@ -19,7 +19,7 @@ func SetLogger(v Logger) Option {
 	})
 }
 
-// SetKeyFormatter sets the formatter to be used for recieved keys from parsers.
+// SetKeyFormatter sets the formatter to be used for received keys from parsers.
 func SetKeyFormatter(fmtr Formatter) Option {
 	return OptionFunc(func(l *Loader) {
 		l.keyFormatter = KeyFormatter(fmtr)

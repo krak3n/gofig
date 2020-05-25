@@ -8,19 +8,14 @@ import (
 // Fields holds a map of keys to fields.
 type Fields map[string]Field
 
-// Set sets a field to the given val on the map.
-func (f Fields) Set(key string, val Field) {
-	f[key] = val
-}
-
-// Delete deletes a field from the map.
-func (f Fields) Delete(key string) {
-	delete(f, key)
+// Set sets a keys field value
+func (f Fields) Set(k string, v Field) {
+	f[k] = v
 }
 
 // A Field holds the fields struct path and reflected value.
 type Field struct {
-	Key   string
+	Key   string // foo.bar.baz
 	Value reflect.Value
 }
 

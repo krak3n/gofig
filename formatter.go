@@ -17,8 +17,8 @@ func (fn FormatterFunc) Format(str string) string {
 	return fn(str)
 }
 
-// LowerCaseFormatter returns a Formatter that formats str to lowercase.
-func LowerCaseFormatter() Formatter {
+// CaseInsensitiveKeys returns a Formatter that formats keys to lowercase.
+func CaseInsensitiveKeys() Formatter {
 	return FormatterFunc(strings.ToLower)
 }
 
