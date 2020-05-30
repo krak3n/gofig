@@ -106,30 +106,10 @@ func (l *Loader) parse(p Parser) error {
 		key = l.keyFormatter.Format(key)
 
 		// Lookup the field
-		field, ok := l.find(key)
+		field, ok := l.lookup(key)
 		if !ok {
 			l.log().Printf("%s key not found", key)
 			continue
-		}
-
-		// The field is a map, this could be a leaf node, init the map
-		if field.Value().Kind() == reflect.Map {
-			// Generate the map key path by removing the root key from the field key
-			// e.g foo.bar.baz becomes baz where bar is a map ahd baz the map key
-			mk := strings.Trim(strings.Replace(key, field.Key(), "", -1), l.delimiter)
-
-			// Returns the leaf map that the value should be set into
-			mv, err := l.initMap(field.Value(), mk)
-			if err != nil {
-				return err
-			}
-
-			// Make a field we can set map index values on
-			kp := strings.Split(mk, l.delimiter)
-			field = newMapField(key, kp[len(kp)-1], mv)
-
-			// Insert the field into the field map so we don't have to initMap again for this value
-			l.fields.Set(key, field)
 		}
 
 		// Set the value on the field
@@ -164,21 +144,55 @@ func (l *Loader) sendKeys(p Parser) error {
 	return <-errCh
 }
 
-// find finds a field for a given key. If no field is found returns false.
+// lookup finds a field by it's key. If it finds a field that is a map that map is initialised
+// returning a field values can be set on.
+func (l *Loader) lookup(key string) (Field, bool) {
+	// Look up the field
+	field, ok := l.find(key)
+	if !ok {
+		return nil, false
+	}
+
+	// Return the field if it is not a map
+	if field.Value().Kind() == reflect.Map {
+
+		// The field is a map, this could be a leaf node, init the map
+		// Generate the map key path by removing the root key from the field key
+		// e.g foo.bar.baz becomes baz where bar is a map ahd baz the map key
+		mk := strings.Trim(strings.Replace(key, field.Key(), "", -1), l.delimiter)
+
+		// Returns the leaf map that the value should be set into
+		mv, err := l.initMap(field.Value(), mk)
+		if err != nil {
+			return nil, false
+		}
+
+		// Make a field we can set map index values on
+		kp := strings.Split(mk, l.delimiter)
+		field = newMapField(key, kp[len(kp)-1], mv)
+
+		// Insert the field into the field map so we don't have to initMap again for this value
+		l.fields.Set(key, field)
+	}
+
+	return field, true
+}
+
+// find recursively finds a field based on the key path until a field is found or the key is empty.
 func (l *Loader) find(key string) (Field, bool) {
-	f, ok := l.fields[key]
+	// Look up the field
+	field, ok := l.fields[key]
 	if ok {
-		return f, ok
+		return field, true
 	}
 
 	elms := strings.Split(key, l.delimiter)
 
-	key = strings.Join(elms[:len(elms)-1], l.delimiter)
-	if key == "" {
-		return f, false
+	if key := strings.Join(elms[:len(elms)-1], l.delimiter); key != "" {
+		return l.find(key)
 	}
 
-	return l.find(key)
+	return nil, false
 }
 
 // initMap initialises maps with zero values for the given keep. Also handles deeply nested maps.
