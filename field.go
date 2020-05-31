@@ -13,6 +13,10 @@ type Field interface {
 	Key() string
 	// Value returns the destination reflect.Value values will be set into.
 	Value() reflect.Value
+	// CanSet returns a bool indicating the parser can set the fields value.
+	CanSet(Prioritiser) bool
+	// SetPriority sets the fields priority.
+	SetPriority(Prioritiser)
 }
 
 // Fields holds a map of keys to fields.
@@ -25,8 +29,9 @@ func (f Fields) Set(k string, v Field) {
 
 // A Field holds the fields struct path and reflected value.
 type field struct {
-	key   string // foo.bar.baz
-	value reflect.Value
+	key      string // foo.bar.baz
+	value    reflect.Value
+	priority uint8
 }
 
 func newField(k string, v reflect.Value) *field {
@@ -46,6 +51,14 @@ func (f *field) Key() string {
 
 func (f *field) Value() reflect.Value {
 	return f.value
+}
+
+func (f *field) CanSet(p Prioritiser) bool {
+	return p.Priority() >= f.priority
+}
+
+func (f *field) SetPriority(p Prioritiser) {
+	f.priority = p.Priority()
 }
 
 // mapField embedded field wrapping map key values allowing setting map fields to be the same as

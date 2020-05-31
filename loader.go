@@ -13,19 +13,25 @@ const (
 
 // Loader parses configuration from one or more sources.
 type Loader struct {
-	// flattened map of field keys to struct reflect values
-	fields Fields
+	// parsers priority mapping
+	parsers Parsers
 
 	// notifiers we are currently watching
 	notifiers []NotifyParser
 	wg        sync.WaitGroup
 
+	// flattened map of field keys to struct reflect values
+	fields Fields
+
 	// Configurable options
-	logger       Logger
-	debug        bool
-	keyFormatter Formatter
-	structTag    string
-	delimiter    string
+	keyFormatter    Formatter // case sensitive
+	structTag       string    // gofig
+	enforcePriority bool      // true
+	delimiter       string    // "."
+
+	// Logging configuration
+	logger Logger
+	debug  bool
 }
 
 // New constructs a new Loader
@@ -42,16 +48,18 @@ func New(dst interface{}, opts ...Option) (*Loader, error) {
 	}
 
 	l := &Loader{
-		fields:    make(Fields),
+		parsers:   make(Parsers),
 		notifiers: make([]NotifyParser, 0),
+		fields:    make(Fields),
 
 		// Defaults
+		keyFormatter:    CaseSensitiveKeys(),
+		structTag:       DefaultStructTag,
+		enforcePriority: true,
+		delimiter:       ".",
+
+		// Logger
 		logger: DefaultLogger(),
-		keyFormatter: KeyFormatter(FormatterFunc(func(key string) string {
-			return key
-		})),
-		structTag: DefaultStructTag,
-		delimiter: ".",
 	}
 
 	for _, opt := range opts {
@@ -66,7 +74,7 @@ func New(dst interface{}, opts ...Option) (*Loader, error) {
 // Parse parses the given parsers in order. If any one parser fails an error will be returned.
 func (l *Loader) Parse(parsers ...Parser) error {
 	for _, p := range parsers {
-		if err := l.parse(p); err != nil {
+		if err := l.parse(l.parsers.Add(p)); err != nil {
 			return err
 		}
 	}
@@ -84,7 +92,7 @@ func (l *Loader) log() Logger {
 }
 
 // parse parses an single parser.
-func (l *Loader) parse(p Parser) error {
+func (l *Loader) parse(p PrioritisedParser) error {
 	// Set the delimiter
 	p.SetDelimeter(l.delimiter)
 
@@ -103,7 +111,7 @@ func (l *Loader) parse(p Parser) error {
 	for fn := range ch {
 		// Call the function passed on the channel returning key value pair
 		key, val := fn()
-		key = l.keyFormatter.Format(key)
+		key = l.keyFormatter.Format(key, l.delimiter)
 
 		// Lookup the field
 		field, ok := l.lookup(key)
@@ -112,9 +120,19 @@ func (l *Loader) parse(p Parser) error {
 			continue
 		}
 
-		// Set the value on the field
+		// Check we can set the fields value if we are enforcing priority.
+		if l.enforcePriority && !field.CanSet(p) {
+			continue
+		}
+
+		// Set the value on the field.
 		if err := field.Set(val); err != nil {
 			return err
+		}
+
+		// If enforcing we the priority on the field.
+		if l.enforcePriority {
+			field.SetPriority(p)
 		}
 	}
 
@@ -154,26 +172,27 @@ func (l *Loader) lookup(key string) (Field, bool) {
 	}
 
 	// Return the field if it is not a map
-	if field.Value().Kind() == reflect.Map {
-
-		// The field is a map, this could be a leaf node, init the map
-		// Generate the map key path by removing the root key from the field key
-		// e.g foo.bar.baz becomes baz where bar is a map ahd baz the map key
-		mk := strings.Trim(strings.Replace(key, field.Key(), "", -1), l.delimiter)
-
-		// Returns the leaf map that the value should be set into
-		mv, err := l.initMap(field.Value(), mk)
-		if err != nil {
-			return nil, false
-		}
-
-		// Make a field we can set map index values on
-		kp := strings.Split(mk, l.delimiter)
-		field = newMapField(key, kp[len(kp)-1], mv)
-
-		// Insert the field into the field map so we don't have to initMap again for this value
-		l.fields.Set(key, field)
+	if field.Value().Kind() != reflect.Map {
+		return field, true
 	}
+
+	// The field is a map, this could be a leaf node, init the map
+	// Generate the map key path by removing the root key from the field key
+	// e.g foo.bar.baz becomes baz where bar is a map ahd baz the map key
+	mk := strings.Trim(strings.Replace(key, field.Key(), "", -1), l.delimiter)
+
+	// Returns the leaf map that the value should be set into
+	mv, err := l.initMap(field.Value(), mk)
+	if err != nil {
+		return nil, false
+	}
+
+	// Make a field we can set map index values on
+	kp := strings.Split(mk, l.delimiter)
+	field = newMapField(key, kp[len(kp)-1], mv)
+
+	// Insert the field into the field map so we don't have to initMap again for this value
+	l.fields.Set(key, field)
 
 	return field, true
 }
@@ -262,7 +281,7 @@ func (l *Loader) flatten(rv reflect.Value, rt reflect.Type, key string) {
 				strings.Trim(
 					strings.Join(
 						append(strings.Split(key, l.delimiter), tag.Name), l.delimiter),
-					l.delimiter))
+					l.delimiter), l.delimiter)
 
 			l.log().Printf("<Field %s kind:%s key:%s tag:%s>", ft.Name, fv.Kind(), fk, tag)
 

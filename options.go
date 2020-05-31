@@ -12,7 +12,7 @@ func (fn OptionFunc) apply(c *Loader) {
 	fn(c)
 }
 
-// SetLogger sets gofig's logger.
+// SetLogger sets logger.
 func SetLogger(v Logger) Option {
 	return OptionFunc(func(l *Loader) {
 		l.logger = v
@@ -20,9 +20,9 @@ func SetLogger(v Logger) Option {
 }
 
 // SetKeyFormatter sets the formatter to be used for received keys from parsers.
-func SetKeyFormatter(fmtr Formatter) Option {
+func SetKeyFormatter(formatter Formatter) Option {
 	return OptionFunc(func(l *Loader) {
-		l.keyFormatter = KeyFormatter(fmtr)
+		l.keyFormatter = formatter
 	})
 }
 
@@ -30,6 +30,13 @@ func SetKeyFormatter(fmtr Formatter) Option {
 func SetStructTag(t string) Option {
 	return OptionFunc(func(l *Loader) {
 		l.structTag = t
+	})
+}
+
+// SetEnforcePriority enable or disable parser priority enforcement.
+func SetEnforcePriority(v bool) Option {
+	return OptionFunc(func(l *Loader) {
+		l.enforcePriority = v
 	})
 }
 

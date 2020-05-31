@@ -8,9 +8,65 @@ import (
 	"strings"
 )
 
+// Parsers stores a map of pointers to PrioritisedParser's.
+type Parsers map[Parser]PrioritisedParser
+
+// Add adds a Parser to the Parsers map returning a PrioritisedParser Parser. The priority of the
+// parser is automatically set based on the size the parsers map.
+func (p Parsers) Add(parser Parser) PrioritisedParser {
+	prioritised, ok := p[parser]
+	if ok {
+		return prioritised
+	}
+
+	prioritised = PrioritiseParser(parser)
+	prioritised.SetPriority(uint8(p.Len() + 1))
+
+	p[parser] = prioritised
+
+	return prioritised
+}
+
+// Get returns a PrioritisedParser from the Parsers map.
+func (p Parsers) Get(parser Parser) PrioritisedParser {
+	return p.Add(parser)
+}
+
+// Len returns the size of the parsers map.
+func (p Parsers) Len() int {
+	return len(p)
+}
+
 // A DelimeterSetter sets the key delimeter used for flattened keys, default is .
 type DelimeterSetter interface {
 	SetDelimeter(string)
+}
+
+// A Prioritiser prioritises a Parser.
+type Prioritiser interface {
+	SetPriority(uint8)
+	Priority() uint8
+}
+
+// PrioritiseParser wraps a Parser so it can be prioritised.
+func PrioritiseParser(p Parser) PrioritisedParser {
+	return &prioritised{
+		Parser: p,
+	}
+}
+
+type prioritised struct {
+	Parser
+
+	priority uint8
+}
+
+func (p *prioritised) SetPriority(v uint8) {
+	p.priority = v
+}
+
+func (p *prioritised) Priority() uint8 {
+	return p.priority
 }
 
 // A Parser parses configuration.
@@ -46,6 +102,12 @@ type Parser interface {
 	Values() (<-chan func() (key string, value interface{}), error)
 }
 
+// A PrioritisedParser is a Parser that has been prioritised.
+type PrioritisedParser interface {
+	Parser
+	Prioritiser
+}
+
 // A ParseReadCloser parses configuration from an io.ReadCloser.
 type ParseReadCloser interface {
 	DelimeterSetter
@@ -55,19 +117,26 @@ type ParseReadCloser interface {
 
 // An InMemoryParser holds key value pairs in memory implementing the Parser interface.
 type InMemoryParser struct {
-	values map[string]interface{}
+	values   map[string]interface{}
+	notify   bool
+	notifyCh chan error
 }
 
 // NewInMemoryParser constructs a new InMemoryParser.
 func NewInMemoryParser() *InMemoryParser {
 	return &InMemoryParser{
-		values: make(map[string]interface{}),
+		values:   make(map[string]interface{}),
+		notifyCh: make(chan error),
 	}
 }
 
 // Add adds a value to the in memory values.
 func (p *InMemoryParser) Add(k string, v interface{}) {
 	p.values[k] = v
+
+	if p.notify {
+		p.notifyCh <- nil
+	}
 }
 
 // Delete deletes a value.
@@ -107,10 +176,31 @@ func (p *InMemoryParser) Values() (<-chan func() (string, interface{}), error) {
 	return ch, nil
 }
 
+// Notify notifies when in memory values have changed.
+func (p *InMemoryParser) Notify() <-chan error {
+	if p.notifyCh == nil {
+		p.notifyCh = make(chan error)
+	}
+
+	p.notify = true
+
+	return p.notifyCh
+}
+
+// Close does closes the notify channel.
+func (p *InMemoryParser) Close() error {
+	p.notify = false
+	close(p.notifyCh)
+	p.notifyCh = nil
+
+	return nil
+}
+
 // ReadCloseParser parses config from io.ReadCloser's.
 type ReadCloseParser struct {
-	parser ParseReadCloser
-	src    io.ReadCloser
+	parser   ParseReadCloser
+	src      io.ReadCloser
+	priority uint8
 }
 
 // NewReadCloseParser constructs a new ReadCloseParser.
@@ -124,6 +214,16 @@ func NewReadCloseParser(parser ParseReadCloser, src io.ReadCloser) *ReadClosePar
 // SetDelimeter sets the parsers delimeter.
 func (p *ReadCloseParser) SetDelimeter(d string) {
 	p.parser.SetDelimeter(d)
+}
+
+// SetPriority sets the parsers priority.
+func (p *ReadCloseParser) SetPriority(v uint8) {
+	p.priority = v
+}
+
+// Priority returns parsers priority.
+func (p *ReadCloseParser) Priority() uint8 {
+	return p.priority
 }
 
 // Keys is a no-op key consumer.
@@ -153,8 +253,9 @@ func FromBytes(parser ParseReadCloser, b []byte) Parser {
 
 // FileParser parsers configuration from a file.
 type FileParser struct {
-	parser ParseReadCloser
-	path   string
+	parser   ParseReadCloser
+	path     string
+	priority uint8
 }
 
 // NewFileParser constructs a new FileParser.
@@ -168,6 +269,16 @@ func NewFileParser(parser ParseReadCloser, path string) *FileParser {
 // SetDelimeter sets the parsers delimeter.
 func (p *FileParser) SetDelimeter(d string) {
 	p.parser.SetDelimeter(d)
+}
+
+// SetPriority sets the parsers priority.
+func (p *FileParser) SetPriority(v uint8) {
+	p.priority = v
+}
+
+// Priority returns parsers priority.
+func (p *FileParser) Priority() uint8 {
+	return p.priority
 }
 
 // Keys is a no-op key consumer.

@@ -6,32 +6,33 @@ import (
 
 // A Formatter formats a str.
 type Formatter interface {
-	Format(string) string
+	Format(key string, delimiter string) string
 }
 
 // FormatterFunc is an adapter function allowing regular methods to act as Formatter's.
-type FormatterFunc func(string) string
+type FormatterFunc func(string, string) string
 
 // Format formats the str calling the wrapping fn.
-func (fn FormatterFunc) Format(str string) string {
-	return fn(str)
+func (fn FormatterFunc) Format(str string, delimiter string) string {
+	return fn(str, delimiter)
+}
+
+// CaseSensitiveKeys returns a Formatter that maintains case sensitivity.
+func CaseSensitiveKeys() Formatter {
+	return FormatterFunc(func(key string, _ string) string {
+		return key
+	})
 }
 
 // CaseInsensitiveKeys returns a Formatter that formats keys to lowercase.
 func CaseInsensitiveKeys() Formatter {
-	return FormatterFunc(strings.ToLower)
-}
-
-// KeyFormatter returns a Formatter that breaks a . delimited key path into it's constituent
-// parts, formats each part with the given formatter returning the reconstituted . delimited key.
-func KeyFormatter(fmtr Formatter) Formatter {
-	return FormatterFunc(func(key string) string {
-		elm := strings.Split(key, ".")
+	return FormatterFunc(func(key string, delimiter string) string {
+		elm := strings.Split(key, delimiter)
 
 		for i, k := range elm {
-			elm[i] = fmtr.Format(k)
+			elm[i] = strings.ToLower(k)
 		}
 
-		return strings.Join(elm, ".")
+		return strings.Join(elm, delimiter)
 	})
 }
