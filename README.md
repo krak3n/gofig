@@ -102,24 +102,24 @@ priority set on the field.
 For example:
 
 ``` go
-	cfg := struct{
-		A string `gofig:"a"`
-		B string `gofig:"b"`
-	}{}
+cfg := struct{
+	A string `gofig:"a"`
+	B string `gofig:"b"`
+}{}
 
-	gofig.New(&cfg)
+gofig.New(&cfg)
 
-	p1 := gofig.NewInMemoryParser()
-	p1.Add("a", "Foo")
-	p1.Add("b", "Bar")
+p1 := gofig.NewInMemoryParser()
+p1.Add("a", "Foo")
+p1.Add("b", "Bar")
 
-	p2 := gofig.NewInMemoryParser()
-	p2.Add("a", "Fizz")
+p2 := gofig.NewInMemoryParser()
+p2.Add("a", "Fizz")
 
-	p3 := gofig.NewInMemoryParser()
-	p3.Add("b", "Buzz")
+p3 := gofig.NewInMemoryParser()
+p3.Add("b", "Buzz")
 
-	gofig.Must(gofig.Parse(p1, p2, p3))
+gofig.Must(gofig.Parse(p1, p2, p3))
 ```
 
 When parsed the `cfg` struct will hold these values:
@@ -131,12 +131,12 @@ Since the `InMemoryParser` implements the `Notifier` interface we can also dynam
 via `Notify`. We will add `p2` to `Notify` and change the `b` value.
 
 ``` go
-	ch := make(chan error)
-	gofig.Notify(ch, p3, p2)
+ch := make(chan error)
+gofig.Notify(ch, p3, p2)
 
-	p2.Add("b", "Fizz")
+p2.Add("b", "Fizz")
 
-	gofig.Must(<-ch)
+gofig.Must(<-ch)
 ```
 
 Here the values will be unchanged, even though `p2` updated `b`. This is because `p3` has higher
